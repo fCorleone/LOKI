@@ -4,6 +4,4 @@
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LokiMessage;
 
-impl LokiMessage{
-    
-}
+impl LokiMessage {}

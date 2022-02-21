@@ -4,6 +4,4 @@
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct MessagePool;
 
-impl MessagePool{
-
-}
+impl MessagePool {}
