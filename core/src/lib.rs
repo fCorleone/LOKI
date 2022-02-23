@@ -30,6 +30,7 @@ pub mod engine;
 pub mod loki_message;
 pub mod message_pool;
 pub mod mutator;
+pub mod neighbour;
 pub mod state_model;
 pub mod target_strategy;
 pub mod user_interface;
