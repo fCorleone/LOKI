@@ -11,8 +11,6 @@ pub struct StateModel {
 /// the struct of state edges
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct StateEdge {
-    /// the start state of the edge
-    from_state: State,
     /// the end state of the edge
     to_state: State,
     /// the weight of this edge
@@ -24,14 +22,27 @@ pub struct StateEdge {
 pub struct State {
     /// the state id
     id: u32,
+    /// the name of the state, which is also the message type of current State
+    msg_type: String,
     /// is the state the current one
     cur_state: bool,
+    /// the count of certain type of the message
+    count: u32,
+    /// the exit edges of current State
+    edges: Vec<StateEdge>,
 }
 
 impl State {
     /// construct a new state
-    pub fn new(id: u32, cur_state: bool) -> Self {
-        Self { id, cur_state }
+    pub fn new(id: u32, msg_type: String, cur_state: bool, count: u32) -> Self {
+        let edges = Vec::new();
+        Self {
+            id,
+            msg_type,
+            cur_state,
+            count,
+            edges,
+        }
     }
 
     /// set the cur_state value
@@ -55,16 +66,28 @@ impl State {
     pub fn get_state_id(&self) -> Result<u32> {
         Ok(self.id)
     }
+
+    /// get current edges
+    pub fn get_cur_edges(&self) -> Result<Vec<StateEdge>> {
+        Ok(self.edges.clone())
+    }
+
+    /// get mutable current edges
+    pub fn get_mut_cur_edges(&mut self) -> Result<&mut Vec<StateEdge>> {
+        Ok(&mut self.edges)
+    }
+
+    /// set the current edges
+    pub fn add_cur_edges(&mut self, new_edge: StateEdge) -> Result<bool> {
+        self.edges.push(new_edge);
+        Ok(true)
+    }
 }
 
 impl StateEdge {
     /// construct a new state edge
-    pub fn new(from_state: State, to_state: State, weight: f32) -> Self {
-        Self {
-            from_state,
-            to_state,
-            weight,
-        }
+    pub fn new(to_state: State, weight: f32) -> Self {
+        Self { to_state, weight }
     }
 
     /// set the to_state
@@ -81,22 +104,6 @@ impl StateEdge {
     /// get mutable to_state
     pub fn get_mut_to_state(&mut self) -> Result<&mut State> {
         Ok(&mut self.to_state)
-    }
-
-    /// set the from_state
-    pub fn set_from_state(&mut self, new_from: State) -> Result<bool> {
-        self.from_state = new_from;
-        Ok(true)
-    }
-
-    /// get the from_state
-    pub fn get_from_state(&self) -> Result<State> {
-        Ok(self.from_state.clone())
-    }
-
-    /// get mutable from_state
-    pub fn get_mut_from_state(&mut self) -> Result<&mut State> {
-        Ok(&mut self.from_state)
     }
 
     /// set the weight

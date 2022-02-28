@@ -54,7 +54,7 @@ impl Engine {
         let message_pool = MessagePool::new(Vec::new());
         let connnected_nodes = Vec::new();
         let state_model = StateModel::new(Vec::new());
-        let cur_state = State::new(0, false);
+        let cur_state = State::new(0, "".to_string(), false, 0);
         let sign_call_back: CallBack = empty_func;
         let send_call_back: CallBack = empty_func;
         Self {

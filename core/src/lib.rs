@@ -20,11 +20,11 @@
     nonstandard_style,
     dead_code,
     deprecated,
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     trivial_casts,
     trivial_numeric_casts
 )]
-#![warn(missing_docs, missing_crate_level_docs)]
+#![warn(missing_docs, rustdoc::missing_crate_level_docs)]
 
 pub mod engine;
 pub mod loki_message;
