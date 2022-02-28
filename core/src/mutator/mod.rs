@@ -9,6 +9,8 @@
 // Integer: only increasing
 // Integer: +1,-1,+10,-10
 
+// test the CI
+
 /// add a mod to calculate hash value, with different types of hash functions
 #[allow(dead_code)]
 fn hash() {}
