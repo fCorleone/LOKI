@@ -4,7 +4,7 @@ use crate::loki_message::LokiMessage;
 use crate::message_pool::MessagePool;
 use crate::neighbour::Neighbour;
 use crate::state_model::{State, StateModel};
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 // define the callback type
 type CallBack = fn();
@@ -70,7 +70,34 @@ impl Engine {
     /// passive sending fuzz packets without initial seeds
     /// this function returns the next message that the fuzzer need to send with LokiMessage type
     /// it will first update the neighbours and statemodels according to the received message
-    pub fn passive_sending(&mut self, _rec_message: LokiMessage) -> Result<Option<LokiMessage>> {
+    pub fn passive_sending(&mut self, rec_message: LokiMessage) -> Result<Option<LokiMessage>> {
+        // first, update the neighbours
+        let from_node = match rec_message.get_from_node() {
+            Ok(node) => node,
+            Err(e) => {
+                return Err(e).with_context(|| format!("Received a Message without From Node"));
+            }
+        };
+        // judge whether the from node is included in the connected_nodes
+        let node_ids: Vec<_> = self
+            .connnected_nodes
+            .iter()
+            .map(|n| n.get_node_id().unwrap())
+            .collect();
+        if !node_ids.contains(&from_node) {
+            self.connnected_nodes
+                .push(Neighbour::new(from_node.clone(), State::new_empty()))
+        }
+        // After that, update the statemodel
+        #[allow(unused_variables)]
+        let sender_node = self
+            .connnected_nodes
+            .iter_mut()
+            .filter(|n| n.get_node_id().unwrap() == from_node)
+            .collect::<Vec<&mut Neighbour>>()
+            .first()
+            .unwrap();
+        // judge the current state, if it is an empty state, choose the proper state, else choose the proper state according to the edges
         todo!()
         // return Ok(Some(LokiMessage)) or Ok(None) or Err()
     }

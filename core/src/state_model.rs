@@ -45,6 +45,18 @@ impl State {
         }
     }
 
+    /// construct a new empty State
+    pub fn new_empty() -> Self {
+        let edges = Vec::new();
+        Self {
+            id: 0,
+            msg_type: "".to_string(),
+            cur_state: false,
+            count: 0,
+            edges,
+        }
+    }
+
     /// set the cur_state value
     pub fn set_cur_state(&mut self, cur_state: bool) -> Result<bool> {
         self.cur_state = cur_state;

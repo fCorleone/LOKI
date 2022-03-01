@@ -1,6 +1,5 @@
 //! The normalization message representation in LOKI
 
-use crate::neighbour::Neighbour;
 use anyhow::Result;
 use json::JsonValue;
 
@@ -8,8 +7,8 @@ use json::JsonValue;
 #[derive(Debug, Clone)]
 /// the loki message struct
 pub struct LokiMessage {
-    /// the node who sends the message
-    from: Neighbour,
+    /// the nodeid who sends the message
+    from: String,
     /// the content of the message, represented as a json object
     /// use json::JsonValue::new_object() to create an empty json object
     content: JsonValue,
@@ -19,7 +18,7 @@ pub struct LokiMessage {
 
 impl LokiMessage {
     /// construct a new message with content
-    pub fn new(from: Neighbour, content: JsonValue, msg_type: String) -> Self {
+    pub fn new(from: String, content: JsonValue, msg_type: String) -> Self {
         Self {
             from,
             content,
@@ -28,7 +27,7 @@ impl LokiMessage {
     }
 
     /// construct a new message with only source node
-    pub fn new_with_source(from: Neighbour) -> Self {
+    pub fn new_with_from(from: String) -> Self {
         let content = JsonValue::new_object();
         let msg_type = "".to_string();
         Self {
@@ -55,18 +54,18 @@ impl LokiMessage {
     }
 
     /// set the from neighbour of a message
-    pub fn set_from_node(&mut self, from_node: Neighbour) -> Result<bool> {
+    pub fn set_from_node(&mut self, from_node: String) -> Result<bool> {
         self.from = from_node;
         Ok(true)
     }
 
     /// get the from neighbour of a message
-    pub fn get_from_node(&self) -> Result<Neighbour> {
+    pub fn get_from_node(&self) -> Result<String> {
         Ok(self.from.clone())
     }
 
     /// get mutable from neighbour of a message
-    pub fn get_mut_from_node(&mut self) -> Result<&mut Neighbour> {
+    pub fn get_mut_from_node(&mut self) -> Result<&mut String> {
         Ok(&mut self.from)
     }
 
