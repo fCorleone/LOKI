@@ -44,13 +44,13 @@ impl LokiMessage {
     }
 
     /// get the message type
-    pub fn get_msg_type(&self) -> Result<String> {
-        Ok(self.msg_type.clone())
+    pub fn get_msg_type(&self) -> String {
+        self.msg_type.clone()
     }
 
     /// get the mutable message type
-    pub fn get_mut_msg_type(&mut self) -> Result<&mut String> {
-        Ok(&mut self.msg_type)
+    pub fn get_mut_msg_type(&mut self) -> &mut String {
+        &mut self.msg_type
     }
 
     /// set the from neighbour of a message
@@ -83,5 +83,15 @@ impl LokiMessage {
     /// get the mutable content of the message
     pub fn get_mut_content(&mut self) -> Result<&mut JsonValue> {
         Ok(&mut self.content)
+    }
+
+    /// mutate the current message
+    pub fn mutate(&mut self) -> LokiMessage {
+        todo!()
+    }
+
+    /// generate a new message of certain type
+    pub fn generate(_msg_type: String) -> Self {
+        todo!()
     }
 }

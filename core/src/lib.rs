@@ -27,6 +27,7 @@
 #![warn(missing_docs, rustdoc::missing_crate_level_docs)]
 
 pub mod engine;
+pub mod error;
 pub mod loki_message;
 pub mod message_pool;
 pub mod mutator;
