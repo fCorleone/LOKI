@@ -17,12 +17,22 @@ impl MessagePool {
     }
 
     /// add received messages to the message pool
-    pub fn add_to_messages_pool(&mut self, _message: Vec<LokiMessage>) -> Result<bool> {
+    pub fn add_msgs_to_pool(&mut self, _message: Vec<LokiMessage>) -> Result<bool> {
+        todo!()
+    }
+
+    /// add one message to the message pool
+    pub fn add_msg_to_pool(&mut self, _message: LokiMessage) -> Result<bool> {
         todo!()
     }
 
     /// delete from the messages pool
     pub fn delete_from_messasge_pool(&mut self) -> Result<bool> {
+        todo!()
+    }
+
+    /// find the latest message of certain type
+    pub fn find_latest_message_with_type(&self, _msg_type: String) -> Result<LokiMessage> {
         todo!()
     }
 }
