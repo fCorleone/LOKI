@@ -9,6 +9,7 @@
 // Integer: only increasing
 // Integer: +1,-1,+10,-10
 use anyhow::Result;
+use rand::distributions::uniform::SampleUniform;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 
@@ -20,6 +21,17 @@ where
 {
     let mut rng = rand::thread_rng();
     let res: T = rng.gen::<T>();
+    Ok(res)
+}
+
+/// generate a random number with a range according to the type
+/// supported type: u32,i32,u64,i64,f32,f64
+pub fn generate_random_number_with_range<T>(lower: T, upper: T) -> Result<T>
+where
+    T: SampleUniform + PartialOrd,
+{
+    let mut rng = rand::thread_rng();
+    let res: T = rng.gen_range(lower..upper);
     Ok(res)
 }
 
@@ -67,6 +79,36 @@ mod tests {
         let p2: f64 = 10f64.powf(-(4 as f64));
         let n7: f64 = generate_random_number().unwrap();
         assert_eq!((n7 >= p2 && n7 < (f64::MAX + p2)), true);
+    }
+
+    #[test]
+    fn test_generate_random_number_with_range() {
+        let lower: u32 = 10;
+        let upper: u32 = 50;
+        let n2: u32 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n2 >= lower && n2 < upper), true);
+        let lower: i32 = -10;
+        let upper: i32 = 50;
+        let n3: i32 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n3 >= lower && n3 < upper), true);
+        let lower: u64 = 1000;
+        let upper: u64 = 5000;
+        let n4: u64 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n4 >= lower && n4 < upper), true);
+        let lower: i64 = -1000;
+        let upper: i64 = 5000;
+        let n5: i64 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n5 >= lower && n5 < upper), true);
+        let lower: f32 = 0.09;
+        let upper: f32 = 30.0;
+        let p1: f32 = 10f32.powf(-(4 as f32));
+        let n6: f32 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n6 >= (lower + p1) && n6 < (upper + p1)), true);
+        let lower: f64 = 100.09;
+        let upper: f64 = 500.0;
+        let p2: f64 = 10f64.powf(-(4 as f64));
+        let n7: f64 = generate_random_number_with_range(lower, upper).unwrap();
+        assert_eq!((n7 >= (lower + p2) && n7 < (upper + p2)), true);
     }
 
     #[test]
