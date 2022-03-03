@@ -74,9 +74,30 @@ pub fn get_random_bigger_u8(cur: u8) -> Result<u8> {
         }
         _ => {
             let mut rng = rand::thread_rng();
-            // get a random difference from range 1 ~ u8::MAX-cur+1
+            // get a random difference from range 0 ~ u8::MAX-cur
             let diff: u8 = rng.gen_range(0..u8::MAX - cur + 1);
             res = diff + cur;
+        }
+    }
+    Ok(res)
+}
+
+/// generate a random number which is slightly varied by the given number
+pub fn get_slight_vary(cur: u8, diff: u8) -> Result<u8> {
+    let res: u8;
+    let mut rng = rand::thread_rng();
+    // 50% chance to increase or decrease
+    let rand_num: u8 = rng.gen_range(0..2);
+    match diff {
+        1 => {
+            res = if rand_num == 0 { cur - 1 } else { cur + 1 };
+        }
+        10 => {
+            res = if rand_num == 0 { cur - 10 } else { cur + 10 };
+        }
+        _ => {
+            // the default remains unchanged
+            res = cur;
         }
     }
     Ok(res)
@@ -154,6 +175,20 @@ mod tests {
     fn test_get_random_bigger_u8() {
         assert_eq!(get_random_bigger_u8(10).unwrap() >= 10, true);
         assert_eq!(get_random_bigger_u8(u8::MAX).unwrap(), u8::MAX);
+    }
+
+    #[test]
+    fn test_get_slight_vary() {
+        let cur: u8 = 5;
+        let diff: u8 = 1;
+        let rand_num: u8 = get_slight_vary(cur, diff).unwrap();
+        assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
+        let cur: u8 = 50;
+        let diff: u8 = 10;
+        let rand_num: u8 = get_slight_vary(cur, diff).unwrap();
+        assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
+        let diff: u8 = 0;
+        assert_eq!(get_slight_vary(cur, diff).unwrap(), cur);
     }
 }
 
