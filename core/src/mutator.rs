@@ -12,6 +12,7 @@ use anyhow::Result;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::{Alphanumeric, Distribution, Standard};
 use rand::Rng;
+use std::ops::{Add, Sub};
 
 /// generate a random number according to the type
 /// supported type: bool,u32,i32,u64,i64,f32,f64
@@ -83,23 +84,16 @@ pub fn get_random_bigger_u8(cur: u8) -> Result<u8> {
 }
 
 /// generate a random number which is slightly varied by the given number
-pub fn get_slight_vary(cur: u8, diff: u8) -> Result<u8> {
-    let res: u8;
+pub fn get_slight_vary<T: Add<Output = T> + Sub<Output = T>>(cur: T, diff: T) -> Result<T> {
+    let res: T;
     let mut rng = rand::thread_rng();
     // 50% chance to increase or decrease
     let rand_num: u8 = rng.gen_range(0..2);
-    match diff {
-        1 => {
-            res = if rand_num == 0 { cur - 1 } else { cur + 1 };
-        }
-        10 => {
-            res = if rand_num == 0 { cur - 10 } else { cur + 10 };
-        }
-        _ => {
-            // the default remains unchanged
-            res = cur;
-        }
-    }
+    res = if rand_num == 0 {
+        cur - diff
+    } else {
+        cur + diff
+    };
     Ok(res)
 }
 
@@ -183,12 +177,10 @@ mod tests {
         let diff: u8 = 1;
         let rand_num: u8 = get_slight_vary(cur, diff).unwrap();
         assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
-        let cur: u8 = 50;
-        let diff: u8 = 10;
-        let rand_num: u8 = get_slight_vary(cur, diff).unwrap();
+        let cur: i32 = 50;
+        let diff: i32 = 10;
+        let rand_num: i32 = get_slight_vary(cur, diff).unwrap();
         assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
-        let diff: u8 = 0;
-        assert_eq!(get_slight_vary(cur, diff).unwrap(), cur);
     }
 }
 
