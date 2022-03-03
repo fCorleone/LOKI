@@ -10,7 +10,7 @@
 // Integer: +1,-1,+10,-10
 use anyhow::Result;
 use rand::distributions::uniform::SampleUniform;
-use rand::distributions::{Distribution, Standard};
+use rand::distributions::{Alphanumeric, Distribution, Standard};
 use rand::Rng;
 
 /// generate a random number according to the type
@@ -32,6 +32,17 @@ where
 {
     let mut rng = rand::thread_rng();
     let res: T = rng.gen_range(lower..upper);
+    Ok(res)
+}
+
+/// generate a random string with given length
+pub fn generate_random_string_with_length(len: usize) -> Result<String> {
+    let rng = rand::thread_rng();
+    let res: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(len)
+        .map(char::from)
+        .collect::<String>();
     Ok(res)
 }
 
@@ -109,6 +120,13 @@ mod tests {
         let p2: f64 = 10f64.powf(-(4 as f64));
         let n7: f64 = generate_random_number_with_range(lower, upper).unwrap();
         assert_eq!((n7 >= (lower + p2) && n7 < (upper + p2)), true);
+    }
+
+    #[test]
+    fn test_generate_random_string_with_length() {
+        let rand_str: String = generate_random_string_with_length(10).unwrap();
+        assert_eq!(rand_str.len(), 10);
+        assert_eq!(rand_str.chars().count(), 10);
     }
 
     #[test]
