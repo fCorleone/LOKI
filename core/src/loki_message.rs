@@ -76,13 +76,13 @@ impl LokiMessage {
     }
 
     /// get the content of the message
-    pub fn get_content(&self) -> Result<JsonValue> {
-        Ok(self.content.clone())
+    pub fn get_content(&self) -> JsonValue {
+        self.content.clone()
     }
 
     /// get the mutable content of the message
-    pub fn get_mut_content(&mut self) -> Result<&mut JsonValue> {
-        Ok(&mut self.content)
+    pub fn get_mut_content(&mut self) -> &mut JsonValue {
+        &mut self.content
     }
 
     /// mutate the current message
