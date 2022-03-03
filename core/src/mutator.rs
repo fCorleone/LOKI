@@ -36,12 +36,26 @@ where
 }
 
 /// generate a random string with given length
+/// the output string contains ASCII letters and numbers: a-z, A-Z and 0-9.
 pub fn generate_random_string_with_length(len: usize) -> Result<String> {
     let rng = rand::thread_rng();
     let res: String = rng
         .sample_iter(&Alphanumeric)
         .take(len)
         .map(char::from)
+        .collect::<String>();
+    Ok(res)
+}
+
+/// generate a BigNumber element with given length
+pub fn generate_random_big_number_with_length(len: usize) -> Result<String> {
+    let mut rng = rand::thread_rng();
+    const CHARSET: &[u8] = b"0123456789";
+    let res: String = (0..len)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            char::from(unsafe { *CHARSET.get_unchecked(idx) })
+        })
         .collect::<String>();
     Ok(res)
 }
@@ -127,6 +141,13 @@ mod tests {
         let rand_str: String = generate_random_string_with_length(10).unwrap();
         assert_eq!(rand_str.len(), 10);
         assert_eq!(rand_str.chars().count(), 10);
+    }
+
+    #[test]
+    fn test_generate_random_big_number_with_length() {
+        let rand_big_number: String = generate_random_big_number_with_length(10).unwrap();
+        assert_eq!(rand_big_number.len(), 10);
+        assert_eq!(rand_big_number.chars().all(char::is_numeric), true);
     }
 
     #[test]
