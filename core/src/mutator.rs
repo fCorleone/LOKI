@@ -10,8 +10,9 @@
 // Integer: +1,-1,+10,-10
 use anyhow::Result;
 use rand::distributions::uniform::SampleUniform;
-use rand::distributions::{Distribution, Standard};
+use rand::distributions::{Alphanumeric, Distribution, Standard};
 use rand::Rng;
+use std::ops::{Add, Sub};
 
 /// generate a random number according to the type
 /// supported type: bool,u32,i32,u64,i64,f32,f64
@@ -35,6 +36,31 @@ where
     Ok(res)
 }
 
+/// generate a random string with given length
+/// the output string contains ASCII letters and numbers: a-z, A-Z and 0-9.
+pub fn generate_random_string_with_length(len: usize) -> Result<String> {
+    let rng = rand::thread_rng();
+    let res: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(len)
+        .map(char::from)
+        .collect::<String>();
+    Ok(res)
+}
+
+/// generate a BigNumber element with given length
+pub fn generate_random_big_number_with_length(len: usize) -> Result<String> {
+    let mut rng = rand::thread_rng();
+    const CHARSET: &[u8] = b"0123456789";
+    let res: String = (0..len)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            char::from(unsafe { *CHARSET.get_unchecked(idx) })
+        })
+        .collect::<String>();
+    Ok(res)
+}
+
 /// generate a random u8 which will always bigger(>=) than the given one
 pub fn get_random_bigger_u8(cur: u8) -> Result<u8> {
     let res: u8;
@@ -49,11 +75,25 @@ pub fn get_random_bigger_u8(cur: u8) -> Result<u8> {
         }
         _ => {
             let mut rng = rand::thread_rng();
-            // get a random difference from range 1 ~ u8::MAX-cur+1
+            // get a random difference from range 0 ~ u8::MAX-cur
             let diff: u8 = rng.gen_range(0..u8::MAX - cur + 1);
             res = diff + cur;
         }
     }
+    Ok(res)
+}
+
+/// generate a random number which is slightly varied by the given number
+pub fn get_slight_vary<T: Add<Output = T> + Sub<Output = T>>(cur: T, diff: T) -> Result<T> {
+    let res: T;
+    let mut rng = rand::thread_rng();
+    // 50% chance to increase or decrease
+    let rand_num: u8 = rng.gen_range(0..2);
+    res = if rand_num == 0 {
+        cur - diff
+    } else {
+        cur + diff
+    };
     Ok(res)
 }
 
@@ -112,9 +152,35 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_random_string_with_length() {
+        let rand_str: String = generate_random_string_with_length(10).unwrap();
+        assert_eq!(rand_str.len(), 10);
+        assert_eq!(rand_str.chars().count(), 10);
+    }
+
+    #[test]
+    fn test_generate_random_big_number_with_length() {
+        let rand_big_number: String = generate_random_big_number_with_length(10).unwrap();
+        assert_eq!(rand_big_number.len(), 10);
+        assert_eq!(rand_big_number.chars().all(char::is_numeric), true);
+    }
+
+    #[test]
     fn test_get_random_bigger_u8() {
         assert_eq!(get_random_bigger_u8(10).unwrap() >= 10, true);
         assert_eq!(get_random_bigger_u8(u8::MAX).unwrap(), u8::MAX);
+    }
+
+    #[test]
+    fn test_get_slight_vary() {
+        let cur: u8 = 5;
+        let diff: u8 = 1;
+        let rand_num: u8 = get_slight_vary(cur, diff).unwrap();
+        assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
+        let cur: i32 = 50;
+        let diff: i32 = 10;
+        let rand_num: i32 = get_slight_vary(cur, diff).unwrap();
+        assert!((rand_num == (cur + diff)) || (rand_num == (cur - diff)));
     }
 }
 
