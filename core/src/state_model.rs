@@ -124,13 +124,20 @@ impl StateModel {
     }
 
     /// add a new state
-    pub fn add_new_state(&mut self, _new_state: State) -> Result<bool> {
-        todo!()
+    pub fn add_new_state(&mut self, new_state: State) -> Result<bool> {
+        self.states.push(new_state);
+        Ok(true)
     }
 
     /// delete a state
-    pub fn delete_state(&mut self, _state: State) -> Result<bool> {
-        todo!()
+    pub fn delete_state(&mut self, state_name: String) -> Result<bool> {
+        // first find the state and retain the other states
+        self.states.retain(|state| {
+            let delete = { state.get_msg_type() == state_name };
+            !delete
+        });
+        // if the state does not exist, don't return error ethier
+        Ok(true)
     }
 
     /// find the State according to the message type
