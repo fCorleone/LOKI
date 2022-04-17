@@ -18,6 +18,12 @@ pub trait Adatption {
         todo!();
     }
 
+    /// receive the packets
+    fn recv_packets() {}
+
+    /// init the fuzzer
+    fn init_fuzz() {}
+
     /// the interface for signing
     fn sign() {
         todo!();

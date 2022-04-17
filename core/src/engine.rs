@@ -287,13 +287,27 @@ impl Engine {
     }
 
     /// get the mutable neighbour node by id
-    pub fn get_mut_neighbour_by_id(&mut self, _node_id: String) -> Result<&mut Neighbour> {
-        todo!()
+    pub fn get_mut_neighbour_by_id(&mut self, node_id: String) -> Result<&mut Neighbour> {
+        for n in &mut self.connnected_nodes {
+            if n.get_node_id() == node_id {
+                return Ok(n);
+            }
+        }
+        return Err(anyhow!(
+            "Try to get a neighbour node not connected with LOKI!"
+        ));
     }
 
     /// get the neighbour node by id
-    pub fn get_neighbour_by_id(&self, _node_id: String) -> Result<Neighbour> {
-        todo!()
+    pub fn get_neighbour_by_id(&self, node_id: String) -> Result<&Neighbour> {
+        for n in &self.connnected_nodes {
+            if n.get_node_id() == node_id {
+                return Ok(n);
+            }
+        }
+        return Err(anyhow!(
+            "Try to get a neighbour node not connected with LOKI!"
+        ));
     }
 
     /// update the connected nodes according to the received messages
