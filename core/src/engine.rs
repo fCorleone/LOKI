@@ -116,9 +116,10 @@ impl Engine {
             .get_message_pool()
             .unwrap()
             .find_latest_message_with_type(next_msg_type.clone())
+            .unwrap()
         {
-            Ok(msg) => msg,
-            Err(_) => {
+            Some(msg) => msg,
+            None => {
                 // no fit messages found in the message pool, generate a new message
                 LokiMessage::generate(next_msg_type.clone())
             }
