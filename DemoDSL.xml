@@ -1,0 +1,20 @@
+LOKI sematic:
+
+<LOKI specname="xxx">
+ <!-- Message List -->
+ <Message name="xxx">
+  <!-- Attribute List -->
+  <Attribute name="xxx"(compulsory) type="TYPELIST"(compulsory) ref="xxx"(optional) size="SIZELIST"(optional) mutation="MUTATIONLIST"(optional) param="xxx,xxx"(optional) algo="SHA256"(optional) />
+
+  <!-- Strong Relation List -->
+  <ExceptedMsg mag_name="A" identify="1,2" msg_identify="A.1,A.2" />
+
+ </Message>
+
+
+
+</LOKI>
+
+<TYPELIST option="Bool, Byte, Number, String, Timestamp, BigNumber, Array, Hash, Signature" />
+<SIZELIST option="natural_number, no_limit(default)" />
+<MUTATIONLIST option="random_*, strictly_increasing, strictly_decreasing, func_hash*, signature, Custom, fixed(default), edge_value" />
