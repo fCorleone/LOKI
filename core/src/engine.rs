@@ -4,12 +4,23 @@ use crate::loki_message::LokiMessage;
 use crate::message_pool::MessagePool;
 use crate::neighbour::Neighbour;
 // use crate::error::LOKIError;
+use crate::scepter::MESSAGE_TYPE;
 use crate::state_model::{State, StateEdge, StateModel};
+use crate::target_strategy::*;
+use crate::user_interface::*;
 use anyhow::{anyhow, Context, Result};
+use rand::seq::SliceRandom;
 use rand::Rng;
+use std::{thread, time};
 
 // define the callback type
 type CallBack = fn();
+
+/// the interval of active package sending, the unit is second
+const SENDING_INTERVAL: u64 = 5;
+
+/// the total number of target selection strategies
+const TARGET_SELECTION_STRATEGIES_NUMBER: u32 = 4;
 
 /// LOKI fuzz engine struct
 pub struct Engine {
@@ -116,7 +127,6 @@ impl Engine {
             .get_message_pool()
             .unwrap()
             .find_latest_message_with_type(next_msg_type.clone())
-            .unwrap()
         {
             Some(msg) => msg,
             None => {
@@ -190,9 +200,208 @@ impl Engine {
     }
 
     /// active sending fuzz packets
-    pub fn active_sending(&mut self) -> Result<bool> {
-        // (self.send_call_back)();
-        todo!()
+    /// this need to be called in a new thread
+    pub fn active_sending(&mut self) {
+        // infinite loop, never stop unless LOKI is down
+        loop {
+            // first get the sending targets for this round
+            let mut send_node_ids: Vec<String> = vec![];
+            let mut rng = rand::thread_rng();
+            let temp: u32 = rng.gen::<u32>();
+            let connected_node_ids = self
+                .connnected_nodes
+                .clone()
+                .into_iter()
+                .map(|n| n.get_node_id())
+                .collect::<Vec<_>>();
+            let total_nodes = connected_node_ids.len() as u32;
+            // if the random number indicates that we should choose the random trarget selection strategy
+            if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 0 {
+                match random_target_nodes_strategy(connected_node_ids) {
+                    Ok(ids) => {
+                        send_node_ids = ids;
+                    }
+                    Err(_) => {
+                        panic!("Connected node is empty! Check your network settings!");
+                    }
+                }
+            }
+            // if the random number indicates that we should choose the random trarget selection strategy and select 1/3 nodes
+            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 1 {
+                match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 3) {
+                    Ok(ids) => {
+                        send_node_ids = ids;
+                    }
+                    Err(_) => {
+                        panic!("Connected node is empty! Check your network settings!");
+                    }
+                }
+            }
+            // if the random number indicates that we should choose the random trarget selection strategy and select 2/3 nodes
+            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 2 {
+                match random_target_nodes_with_num_strategy(connected_node_ids, 2 * total_nodes / 3)
+                {
+                    Ok(ids) => {
+                        send_node_ids = ids;
+                    }
+                    Err(_) => {
+                        panic!("Connected node is empty! Check your network settings!");
+                    }
+                }
+            }
+            // if the random number indicates that we should choose the random trarget selection strategy and select 1/2 nodes
+            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 3 {
+                match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 2) {
+                    Ok(ids) => {
+                        send_node_ids = ids;
+                    }
+                    Err(_) => {
+                        panic!("Connected node is empty! Check your network settings!");
+                    }
+                }
+            }
+
+            // secondly, generate the message for each target and send the package out
+            // here we have 4 choices:
+            // 1) same messages for each target, randomly choose
+            // 2) same messages for each target, according to LOKI's state
+            // 3) various messages for each target, randomly choose
+            // 4) various messages for each target, according to the target's state
+            let temp_type: u32 = rng.gen::<u32>();
+            if temp_type % 4 == 0 {
+                // 1) randomly choose a message type
+                let chosen_msg_type = MESSAGE_TYPE
+                    .choose_multiple(&mut rand::thread_rng(), 1)
+                    .map(|x| x.to_string().clone())
+                    .collect::<Vec<String>>()[0]
+                    .clone();
+                // get a random value of such type
+                let chosen_msg = match self
+                    .message_pool
+                    .find_latest_message_with_type(chosen_msg_type.clone())
+                {
+                    Some(msg) => msg,
+                    None => {
+                        // if there is no such type msg in the pool, generate one
+                        LokiMessage::generate(chosen_msg_type.clone())
+                    }
+                };
+                // send the message
+                for target in send_node_ids {
+                    send_packets(target, chosen_msg.clone());
+                }
+            } else if temp_type % 4 == 1 {
+                // 2) choose a type according to LOKI's state
+                let current_state = match self
+                    .state_model
+                    .find_state_with_msg_type(self.cur_state.clone())
+                {
+                    Ok(state) => state,
+                    Err(_) => {
+                        panic!(
+                            "cannot find the message with type: {:?}",
+                            self.cur_state.clone()
+                        );
+                    }
+                };
+                let mut next_states: Vec<String> = current_state
+                    .get_cur_edges()
+                    .iter()
+                    .map(|e| e.get_to_state())
+                    .collect();
+                next_states.push(self.cur_state.clone());
+                let chosen_msg_type = next_states
+                    .choose_multiple(&mut rand::thread_rng(), 1)
+                    .map(|x| x.clone())
+                    .collect::<Vec<String>>()[0]
+                    .clone();
+                // get a random value of such type
+                let chosen_msg = match self
+                    .message_pool
+                    .find_latest_message_with_type(chosen_msg_type.clone())
+                {
+                    Some(msg) => msg,
+                    None => {
+                        // if there is no such type msg in the pool, generate one
+                        LokiMessage::generate(chosen_msg_type.clone())
+                    }
+                };
+                // send the message
+                for target in send_node_ids {
+                    send_packets(target, chosen_msg.clone());
+                }
+            } else if temp_type % 4 == 2 {
+                // 3) various random messages for each target
+                for target in send_node_ids {
+                    let chosen_msg_type = MESSAGE_TYPE
+                        .choose_multiple(&mut rand::thread_rng(), 1)
+                        .map(|x| x.to_string().clone())
+                        .collect::<Vec<String>>()[0]
+                        .clone();
+                    // get a random value of such type
+                    let chosen_msg = match self
+                        .message_pool
+                        .find_latest_message_with_type(chosen_msg_type.clone())
+                    {
+                        Some(msg) => msg,
+                        None => {
+                            // if there is no such type msg in the pool, generate one
+                            LokiMessage::generate(chosen_msg_type.clone())
+                        }
+                    };
+                    send_packets(target, chosen_msg.clone());
+                }
+            } else if temp_type % 4 == 3 {
+                // 4) various messages for each target according to the target's state
+                for target in send_node_ids {
+                    let neighbour = match self.get_neighbour_by_id(target.clone()) {
+                        Ok(n) => n,
+                        Err(_) => {
+                            panic!("Try to send to neighbour node not connected with LOKI, the id is {:?}!",target);
+                        }
+                    };
+                    let neighbour_current_state = match self
+                        .state_model
+                        .find_state_with_msg_type(neighbour.get_current_state().clone())
+                    {
+                        Ok(state) => state,
+                        Err(_) => {
+                            panic!(
+                                "cannot find the message with type: {:?}",
+                                neighbour.get_current_state().clone()
+                            );
+                        }
+                    };
+                    let mut next_states: Vec<String> = neighbour_current_state
+                        .get_cur_edges()
+                        .iter()
+                        .map(|e| e.get_to_state())
+                        .collect();
+                    next_states.push(neighbour.get_current_state().clone());
+                    let chosen_msg_type = next_states
+                        .choose_multiple(&mut rand::thread_rng(), 1)
+                        .map(|x| x.clone())
+                        .collect::<Vec<String>>()[0]
+                        .clone();
+                    // get a random value of such type
+                    let chosen_msg = match self
+                        .message_pool
+                        .find_latest_message_with_type(chosen_msg_type.clone())
+                    {
+                        Some(msg) => msg,
+                        None => {
+                            // if there is no such type msg in the pool, generate one
+                            LokiMessage::generate(chosen_msg_type.clone())
+                        }
+                    };
+                    send_packets(target, chosen_msg.clone());
+                }
+            }
+
+            // sleep for the interval time
+            let sleep_time = time::Duration::from_secs(SENDING_INTERVAL);
+            thread::sleep(sleep_time);
+        }
     }
 
     /// set the addresses of each node

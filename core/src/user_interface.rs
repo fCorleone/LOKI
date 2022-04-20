@@ -2,30 +2,28 @@
 use crate::loki_message::LokiMessage;
 
 /// the adatption interface
-pub trait Adatption {
-    /// unwrap the LokiMessage into developer defined message type
-    fn unwrap() -> LokiMessage {
-        todo!();
-    }
+/// unwrap the LokiMessage into developer defined message type
+pub fn unwrap() -> LokiMessage {
+    todo!();
+}
 
-    /// wrap the user defined message type into LokiMessage
-    fn wrap() {
-        todo!();
-    }
+/// wrap the user defined message type into LokiMessage
+pub fn wrap() {
+    todo!();
+}
 
-    /// the package sending interface of tested systems
-    fn send_packets() {
-        todo!();
-    }
+/// the package sending interface of tested systems
+pub fn send_packets(_target_id: String, _msg: LokiMessage) {
+    todo!();
+}
 
-    /// receive the packets
-    fn recv_packets() {}
+/// receive the packets
+pub fn recv_packets() {}
 
-    /// init the fuzzer
-    fn init_fuzz() {}
+/// init the fuzzer
+pub fn init_fuzz() {}
 
-    /// the interface for signing
-    fn sign() {
-        todo!();
-    }
+/// the interface for signing
+pub fn sign() {
+    todo!();
 }

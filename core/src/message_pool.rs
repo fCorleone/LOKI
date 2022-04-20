@@ -44,13 +44,13 @@ impl MessagePool {
     }
 
     /// find the latest message of certain type
-    pub fn find_latest_message_with_type(&self, msg_type: String) -> Result<Option<LokiMessage>> {
+    pub fn find_latest_message_with_type(&self, msg_type: String) -> Option<LokiMessage> {
         for mes in self.messages.iter().rev() {
             if mes.get_msg_type() == msg_type {
-                return Ok(Some(mes.clone()));
+                return Some(mes.clone());
             }
         }
         // cannot find the latest message with certain type
-        return Ok(None);
+        return None;
     }
 }
