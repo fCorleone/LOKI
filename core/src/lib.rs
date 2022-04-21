@@ -28,6 +28,7 @@
 
 pub mod engine;
 pub mod error;
+pub mod global_definition;
 pub mod loki_message;
 pub mod message_pool;
 pub mod mutator;
