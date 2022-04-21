@@ -11,10 +11,8 @@ LOKI sematic:
 
  </Message>
 
-
-
 </LOKI>
 
-<TYPELIST option="Bool, Byte, Number, String, Timestamp, BigNumber, Array, Hash, Signature" />
+<TYPELIST option="Bool, Number, Byte, String, BigNumber, Timestamp, Array, Hash, Signature" />
 <SIZELIST option="natural_number, no_limit(default)" />
-<MUTATIONLIST option="random_*, strictly_increasing, strictly_decreasing, func_hash*, signature, Custom, fixed(default), edge_value" />
+<MUTATIONLIST option="random_*(default), strictly_increasing, strictly_decreasing, fine_tuning, edge_value, func_hash*, signature, fixed, custom" />
