@@ -190,50 +190,18 @@ fn get_signed_edge_value(language: String, size: usize) -> (i128, i128) {
     }
 }
 
-/// generate a random unsigned [Number] for Rust
-pub fn generate_random_unsigned_number_for_rust(size: usize) -> u128 {
+/// generate a random unsigned [Number]
+pub fn generate_random_unsigned_number(size: usize, language: String) -> u128 {
     let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("rust".to_string(), size);
+    let (max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
     let res = rng.gen_range(min_val..max_val + 1);
     res
 }
 
-/// generate a random signed [Number] for Rust
-pub fn generate_random_signed_number_for_rust(size: usize) -> i128 {
+/// generate a random signed [Number]
+pub fn generate_random_signed_number(size: usize, language: String) -> i128 {
     let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("rust".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random unsigned [Number] for C
-pub fn generate_random_unsigned_number_for_c(size: usize) -> u128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("c".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random signed [Number] for C
-pub fn generate_random_signed_number_for_c(size: usize) -> i128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("c".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random unsigned [Number] for Golang
-pub fn generate_random_unsigned_number_for_go(size: usize) -> u128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("go".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random signed [Number] for Golang
-pub fn generate_random_signed_number_for_go(size: usize) -> i128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("go".to_string(), size);
+    let (max_val, min_val) = get_signed_edge_value(language.to_string(), size);
     let res = rng.gen_range(min_val..max_val + 1);
     res
 }
@@ -417,22 +385,10 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_random_unsigned_number_for_rust() {}
+    fn test_generate_random_unsigned_number() {}
 
     #[test]
-    fn test_generate_random_signed_number_for_rust() {}
-
-    #[test]
-    fn test_generate_random_unsigned_number_for_c() {}
-
-    #[test]
-    fn test_generate_random_signed_number_for_c() {}
-
-    #[test]
-    fn test_generate_random_unsigned_number_for_go() {}
-
-    #[test]
-    fn test_generate_random_signed_number_for_go() {}
+    fn test_generate_random_signed_number() {}
 
     #[test]
     fn test_generate_random_byte_with_length() {
