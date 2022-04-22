@@ -331,6 +331,152 @@ pub fn byte_flip() {
  * Specific Mutation Strategies
  ********************/
 
+/// obtain an unsigned number greater than or equal to the current value
+pub fn strictly_increasing_mutate_for_unsigned_number(
+    cur: u128,
+    size: usize,
+    language: String,
+) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, _min_val) = get_unsigned_edge_value(language.to_string(), size);
+    // get a random number range cur ~ max_val
+    let res: u128 = rng.gen_range(cur..max_val + 1);
+    res
+}
+
+/// obtain a signed number greater than or equal to the current value
+pub fn strictly_increasing_mutate_for_signed_number(
+    cur: i128,
+    size: usize,
+    language: String,
+) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, _min_val) = get_signed_edge_value(language.to_string(), size);
+    // get a random number range cur ~ max_val
+    let res: i128 = rng.gen_range(cur..max_val + 1);
+    res
+}
+
+/// obtain an unsigned number less than or equal to the current value
+pub fn strictly_decreasing_mutate_for_unsigned_number(
+    cur: u128,
+    size: usize,
+    language: String,
+) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (_max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
+    // get a random difference from range min_val ~ cur
+    let res: u128 = rng.gen_range(min_val..cur + 1);
+    res
+}
+
+/// obtain an unsigned number less than or equal to the current value
+pub fn strictly_decreasing_mutate_for_signed_number(
+    cur: i128,
+    size: usize,
+    language: String,
+) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (_max_val, min_val) = get_signed_edge_value(language.to_string(), size);
+    // get a random difference from range min_val ~ cur
+    let res: i128 = rng.gen_range(min_val..cur + 1);
+    res
+}
+
+/// fine-tuning for unsigned numbers
+pub fn fine_tuning_mutate_for_unsigned_number(cur: u128, margin: u8, choice: String) -> u128 {
+    let mut rng = rand::thread_rng();
+    match choice.as_str() {
+        "+" => {
+            return cur + margin as u128;
+        }
+        "-" => {
+            return cur - margin as u128;
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return cur + margin as u128;
+                }
+                1 => {
+                    return cur - margin as u128;
+                }
+                _ => {
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+/// fine-tuning for signed numbers
+pub fn fine_tuning_mutate_for_signed_number(cur: i128, margin: i8, choice: String) -> i128 {
+    let mut rng = rand::thread_rng();
+    match choice.as_str() {
+        "+" => {
+            return cur + margin as i128;
+        }
+        "-" => {
+            return cur - margin as i128;
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return cur + margin as i128;
+                }
+                1 => {
+                    return cur - margin as i128;
+                }
+                _ => {
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+/// obtain the max/min unsigned value of corresponding type
+pub fn edge_value_mutate_for_unsigned_number(size: usize, language: String) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
+    // randomly select the maximum or minimum value to return
+    let choice: u8 = rng.gen_range(0..2);
+    match choice {
+        0 => {
+            return max_val;
+        }
+        1 => {
+            return min_val;
+        }
+        _ => {
+            return 0;
+        }
+    }
+}
+
+/// obtain the max/min signed value of corresponding type
+pub fn edge_value_mutate_for_signed_number(size: usize, language: String) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_signed_edge_value(language.to_string(), size);
+    // randomly select the maximum or minimum value to return
+    let choice: u8 = rng.gen_range(0..2);
+    match choice {
+        0 => {
+            return max_val;
+        }
+        1 => {
+            return min_val;
+        }
+        _ => {
+            return 0;
+        }
+    }
+}
+
 /********************
  * Chain-Related Operations
  ********************/
@@ -426,6 +572,30 @@ mod tests {
     /*
      * Test Specific Mutation Strategies
      */
+
+    #[test]
+    fn test_strictly_increasing_mutate_for_unsigned_number() {}
+
+    #[test]
+    fn test_strictly_increasing_mutate_for_signed_number() {}
+
+    #[test]
+    fn test_strictly_decreasing_mutate_for_unsigned_number() {}
+
+    #[test]
+    fn test_strictly_decreasing_mutate_for_signed_number() {}
+
+    #[test]
+    fn test_fine_tuning_mutate_for_unsigned_number() {}
+
+    #[test]
+    fn test_fine_tuning_mutate_for_signed_number() {}
+
+    #[test]
+    fn test_edge_value_mutate_for_unsigned_number() {}
+
+    #[test]
+    fn test_edge_value_mutate_for_signed_number() {}
 
     /*
      * Test Chain-Related Operations
