@@ -3,7 +3,7 @@
 /********************
  * Definition of Boundary Values of Integer Types in Different Languages
  ********************/
-
+ #![allow(missing_docs)]
 pub const MIN_UINT: u128 = 0;
 
 /// Rust: unsigned integer values
