@@ -275,6 +275,11 @@ pub fn generate_random_long_number_with_length(len: usize) -> String {
     res
 }
 
+/// generate a random [Array]
+pub fn generate_random_array() {
+    todo!();
+}
+
 /********************
  * Pure Random Mutation
  ********************/
@@ -341,6 +346,16 @@ pub fn random_mutate_long_number(long_number: String) -> String {
 
 /// random mutation for array
 pub fn random_mutate_array() {
+    todo!();
+}
+
+/// [Outer function]: bit flip
+pub fn bit_flip() {
+    todo!();
+}
+
+/// [Outer function]: byte flip
+pub fn byte_flip() {
     todo!();
 }
 
