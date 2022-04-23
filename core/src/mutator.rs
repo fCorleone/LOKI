@@ -1,5 +1,5 @@
 //! Mutator used by LOKI to mutate the existing seeds or generate seeds from scratch
-use crate::global_definition::*;
+use crate::utils::*;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -24,170 +24,6 @@ pub fn generate_random_bool() -> bool {
     let mut rng = rand::thread_rng();
     let res: bool = rng.gen::<bool>();
     res
-}
-
-// get max/min value of unsigned number for different languages
-fn get_unsigned_edge_value(language: String, size: usize) -> (u128, u128) {
-    let max_val: u128;
-    let min_val: u128 = MIN_UINT;
-    match language.to_ascii_lowercase().as_str() {
-        "rust" => {
-            match size {
-                8 => {
-                    max_val = RUST_MAX_U8;
-                }
-                16 => {
-                    max_val = RUST_MAX_U16;
-                }
-                32 => {
-                    max_val = RUST_MAX_U32;
-                }
-                64 => {
-                    max_val = RUST_MAX_U64;
-                }
-                128 => {
-                    max_val = RUST_MAX_U128;
-                }
-                _ => {
-                    max_val = RUST_MAX_U128;
-                }
-            }
-            (max_val, min_val)
-        }
-        "c" => {
-            match size {
-                8 => {
-                    max_val = C_MAX_UINT8;
-                }
-                16 => {
-                    max_val = C_MAX_USHORT_UINT16;
-                }
-                32 => {
-                    max_val = C_MAX_UINT_ULONG_UINT32;
-                }
-                64 => {
-                    max_val = C_MAX_ULONGLONG_UINT64;
-                }
-                _ => {
-                    max_val = C_MAX_ULONGLONG_UINT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        "go" => {
-            match size {
-                8 => {
-                    max_val = GO_MAX_UINT8;
-                }
-                16 => {
-                    max_val = GO_MAX_UINT16;
-                }
-                32 => {
-                    max_val = GO_MAX_UINT32;
-                }
-                64 => {
-                    max_val = GO_MAX_UINT64;
-                }
-                _ => {
-                    max_val = GO_MAX_UINT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        _ => {
-            panic!("unsupported language type: {}", language);
-        }
-    }
-}
-
-// get max/min value of signed number for different languages
-fn get_signed_edge_value(language: String, size: usize) -> (i128, i128) {
-    let max_val: i128;
-    let min_val: i128;
-    match language.to_ascii_lowercase().as_str() {
-        "rust" => {
-            match size {
-                8 => {
-                    max_val = RUST_MAX_I8;
-                    min_val = RUST_MIN_I8;
-                }
-                16 => {
-                    max_val = RUST_MAX_I16;
-                    min_val = RUST_MIN_I16;
-                }
-                32 => {
-                    max_val = RUST_MAX_I32;
-                    min_val = RUST_MIN_I32;
-                }
-                64 => {
-                    max_val = RUST_MAX_I64;
-                    min_val = RUST_MIN_I64;
-                }
-                128 => {
-                    max_val = RUST_MAX_I128;
-                    min_val = RUST_MIN_I128;
-                }
-                _ => {
-                    max_val = RUST_MAX_I128;
-                    min_val = RUST_MIN_I128;
-                }
-            }
-            (max_val, min_val)
-        }
-        "c" => {
-            match size {
-                8 => {
-                    max_val = C_MAX_INT8;
-                    min_val = C_MIN_INT8;
-                }
-                16 => {
-                    max_val = C_MAX_SHORT_INT16;
-                    min_val = C_MIN_SHORT_INT16;
-                }
-                32 => {
-                    max_val = C_MAX_INT_LONG_INT32;
-                    min_val = C_MIN_INT_LONG_INT32;
-                }
-                64 => {
-                    max_val = C_MAX_LONGLONG_INT64;
-                    min_val = C_MIN_LONGLONG_INT64;
-                }
-                _ => {
-                    max_val = C_MAX_LONGLONG_INT64;
-                    min_val = C_MIN_LONGLONG_INT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        "go" => {
-            match size {
-                8 => {
-                    max_val = GO_MAX_INT8;
-                    min_val = GO_MIN_INT8;
-                }
-                16 => {
-                    max_val = GO_MAX_INT16;
-                    min_val = GO_MIN_INT16;
-                }
-                32 => {
-                    max_val = GO_MAX_INT32;
-                    min_val = GO_MIN_INT32;
-                }
-                64 => {
-                    max_val = GO_MAX_INT64;
-                    min_val = GO_MIN_INT64;
-                }
-                _ => {
-                    max_val = GO_MAX_INT64;
-                    min_val = GO_MIN_INT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        _ => {
-            panic!("unsupported language type: {}", language);
-        }
-    }
 }
 
 /// generate a random unsigned [Number]
@@ -384,24 +220,24 @@ pub fn strictly_decreasing_mutate_for_signed_number(
 }
 
 /// fine-tuning for unsigned numbers
-pub fn fine_tuning_mutate_for_unsigned_number(cur: u128, margin: u8, choice: String) -> u128 {
+pub fn fine_tuning_mutate_for_unsigned_number(cur: u128, margin: u128, op: String) -> u128 {
     let mut rng = rand::thread_rng();
-    match choice.as_str() {
+    match op.as_str() {
         "+" => {
-            return cur + margin as u128;
+            return cur + margin;
         }
         "-" => {
-            return cur - margin as u128;
+            return cur - margin;
         }
         _ => {
             // randomly choose to increase or decrease
             let rand: u8 = rng.gen_range(0..2);
             match rand {
                 0 => {
-                    return cur + margin as u128;
+                    return cur + margin;
                 }
                 1 => {
-                    return cur - margin as u128;
+                    return cur - margin;
                 }
                 _ => {
                     return 0;
@@ -412,27 +248,55 @@ pub fn fine_tuning_mutate_for_unsigned_number(cur: u128, margin: u8, choice: Str
 }
 
 /// fine-tuning for signed numbers
-pub fn fine_tuning_mutate_for_signed_number(cur: i128, margin: i8, choice: String) -> i128 {
+pub fn fine_tuning_mutate_for_signed_number(cur: i128, margin: i128, op: String) -> i128 {
     let mut rng = rand::thread_rng();
-    match choice.as_str() {
+    match op.as_str() {
         "+" => {
-            return cur + margin as i128;
+            return cur + margin;
         }
         "-" => {
-            return cur - margin as i128;
+            return cur - margin;
         }
         _ => {
             // randomly choose to increase or decrease
             let rand: u8 = rng.gen_range(0..2);
             match rand {
                 0 => {
-                    return cur + margin as i128;
+                    return cur + margin;
                 }
                 1 => {
-                    return cur - margin as i128;
+                    return cur - margin;
                 }
                 _ => {
                     return 0;
+                }
+            }
+        }
+    }
+}
+
+/// fine-tuning for long numbers (bigNumber or timestamp)
+pub fn fine_tuning_mutate_for_long_number(long_number: String, margin: u128, op: String) -> String {
+    let mut rng = rand::thread_rng();
+    match op.as_str() {
+        "+" => {
+            return add_string_by_bits(long_number, margin.to_string());
+        }
+        "-" => {
+            return sub_string_by_bits(long_number, margin.to_string());
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return add_string_by_bits(long_number, margin.to_string());
+                }
+                1 => {
+                    return sub_string_by_bits(long_number, margin.to_string());
+                }
+                _ => {
+                    return "0".to_string();
                 }
             }
         }
@@ -590,6 +454,30 @@ mod tests {
 
     #[test]
     fn test_fine_tuning_mutate_for_signed_number() {}
+
+    #[test]
+    fn test_fine_tuning_mutate_for_long_number() {
+        let mut long_numer: String = "185".to_string();
+        let mut margin: u128 = 37;
+        let mut ans: String =
+            fine_tuning_mutate_for_long_number(long_numer, margin, "+".to_string());
+        assert_eq!(ans, "222");
+
+        long_numer = "99".to_string();
+        margin = 2;
+        ans = fine_tuning_mutate_for_long_number(long_numer, margin, "+".to_string());
+        assert_eq!(ans, "101");
+
+        long_numer = "185".to_string();
+        margin = 37;
+        ans = fine_tuning_mutate_for_long_number(long_numer, margin, "-".to_string());
+        assert_eq!(ans, "148");
+
+        long_numer = "1".to_string();
+        margin = 113;
+        ans = fine_tuning_mutate_for_long_number(long_numer, margin, "-".to_string());
+        assert_eq!(ans, "1888");
+    }
 
     #[test]
     fn test_edge_value_mutate_for_unsigned_number() {}

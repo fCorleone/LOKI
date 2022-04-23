@@ -1,4 +1,4 @@
-//! global variable definition
+//! Global variable definition
 
 /********************
  * Definition of Boundary Values of Integer Types in Different Languages
