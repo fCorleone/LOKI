@@ -1,4 +1,5 @@
 //! Mutator used by LOKI to mutate the existing seeds or generate seeds from scratch
+use crate::loki_type::{Array, BasicType};
 use crate::utils::*;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
@@ -88,7 +89,7 @@ pub fn generate_random_long_number_with_length(len: usize) -> String {
 }
 
 /// generate a random [Array]
-pub fn generate_random_array() {
+pub fn generate_random_array() -> Array {
     todo!();
 }
 
@@ -156,9 +157,48 @@ pub fn random_mutate_long_number(long_number: String) -> String {
     res
 }
 
-/// random mutation for array
-pub fn random_mutate_array() {
-    todo!();
+/// random mutation for array, here we randomly mutate the lenth as well as the content
+pub fn random_mutate_array(original_arr: &mut Array) -> Array {
+    if original_arr.get_length() == 0 {
+        return generate_random_array();
+    }
+    let mut _rng = rand::thread_rng();
+    let old_len = original_arr.get_length();
+    let new_len = mutate_array_len(old_len);
+    let mut _shuffled = false;
+    let ele_type = original_arr.get_ele_ty();
+    if new_len > old_len {
+        match ele_type {
+            BasicType::BIGNUMBER => {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| generate_random_long_number_with_length(1000))
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            }
+            _ => {}
+        }
+    } else if new_len < old_len {
+        // delete some elements
+    } else {
+        // shuffle the original array
+    }
+    debug_info!("mutate_array: {} -> {}", old_len, new_len);
+
+    todo!()
+}
+
+/// random choose a new len for an array
+pub fn mutate_array_len(old_len: u32) -> u32 {
+    let mut new_len = old_len;
+    let mut rng = rand::thread_rng();
+    if rng.gen() {
+        while new_len == old_len || rng.gen() {
+            new_len += 1;
+        }
+    } else {
+        new_len = rng.gen_range(0..=10)
+    };
+    new_len
 }
 
 /// [Outer function]: bit flip

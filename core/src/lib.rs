@@ -26,10 +26,14 @@
 )]
 #![warn(missing_docs, rustdoc::missing_crate_level_docs)]
 
+#[macro_use]
+#[allow(missing_docs)]
+pub mod verbose;
 pub mod engine;
 pub mod error;
 pub mod global_definition;
 pub mod loki_message;
+pub mod loki_type;
 pub mod message_pool;
 pub mod mutator;
 pub mod neighbour;
