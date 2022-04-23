@@ -1,5 +1,5 @@
 //! Mutator used by LOKI to mutate the existing seeds or generate seeds from scratch
-use crate::global_definition::*;
+use crate::utils::*;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -26,215 +26,27 @@ pub fn generate_random_bool() -> bool {
     res
 }
 
-// get max/min value of unsigned number for different languages
-fn get_unsigned_edge_value(language: String, size: usize) -> (u128, u128) {
-    let max_val: u128;
-    let min_val: u128 = MIN_UINT;
-    match language.to_ascii_lowercase().as_str() {
-        "rust" => {
-            match size {
-                8 => {
-                    max_val = RUST_MAX_U8;
-                }
-                16 => {
-                    max_val = RUST_MAX_U16;
-                }
-                32 => {
-                    max_val = RUST_MAX_U32;
-                }
-                64 => {
-                    max_val = RUST_MAX_U64;
-                }
-                128 => {
-                    max_val = RUST_MAX_U128;
-                }
-                _ => {
-                    max_val = RUST_MAX_U128;
-                }
-            }
-            (max_val, min_val)
-        }
-        "c" => {
-            match size {
-                8 => {
-                    max_val = C_MAX_UINT8;
-                }
-                16 => {
-                    max_val = C_MAX_USHORT_UINT16;
-                }
-                32 => {
-                    max_val = C_MAX_UINT_ULONG_UINT32;
-                }
-                64 => {
-                    max_val = C_MAX_ULONGLONG_UINT64;
-                }
-                _ => {
-                    max_val = C_MAX_ULONGLONG_UINT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        "go" => {
-            match size {
-                8 => {
-                    max_val = GO_MAX_UINT8;
-                }
-                16 => {
-                    max_val = GO_MAX_UINT16;
-                }
-                32 => {
-                    max_val = GO_MAX_UINT32;
-                }
-                64 => {
-                    max_val = GO_MAX_UINT64;
-                }
-                _ => {
-                    max_val = GO_MAX_UINT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        _ => {
-            panic!("unsupported language type: {}", language);
-        }
+/// generate a random unsigned [Number]
+pub fn generate_random_unsigned_number(size: usize, language: String) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
+    // get a random number in range min_val ~ max_val
+    let mut res = rng.gen_range(min_val..max_val);
+    if res == max_val - 1 {
+        res = max_val;
     }
+    res
 }
 
-// get max/min value of signed number for different languages
-fn get_signed_edge_value(language: String, size: usize) -> (i128, i128) {
-    let max_val: i128;
-    let min_val: i128;
-    match language.to_ascii_lowercase().as_str() {
-        "rust" => {
-            match size {
-                8 => {
-                    max_val = RUST_MAX_I8;
-                    min_val = RUST_MIN_I8;
-                }
-                16 => {
-                    max_val = RUST_MAX_I16;
-                    min_val = RUST_MIN_I16;
-                }
-                32 => {
-                    max_val = RUST_MAX_I32;
-                    min_val = RUST_MIN_I32;
-                }
-                64 => {
-                    max_val = RUST_MAX_I64;
-                    min_val = RUST_MIN_I64;
-                }
-                128 => {
-                    max_val = RUST_MAX_I128;
-                    min_val = RUST_MIN_I128;
-                }
-                _ => {
-                    max_val = RUST_MAX_I128;
-                    min_val = RUST_MIN_I128;
-                }
-            }
-            (max_val, min_val)
-        }
-        "c" => {
-            match size {
-                8 => {
-                    max_val = C_MAX_INT8;
-                    min_val = C_MIN_INT8;
-                }
-                16 => {
-                    max_val = C_MAX_SHORT_INT16;
-                    min_val = C_MIN_SHORT_INT16;
-                }
-                32 => {
-                    max_val = C_MAX_INT_LONG_INT32;
-                    min_val = C_MIN_INT_LONG_INT32;
-                }
-                64 => {
-                    max_val = C_MAX_LONGLONG_INT64;
-                    min_val = C_MIN_LONGLONG_INT64;
-                }
-                _ => {
-                    max_val = C_MAX_LONGLONG_INT64;
-                    min_val = C_MIN_LONGLONG_INT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        "go" => {
-            match size {
-                8 => {
-                    max_val = GO_MAX_INT8;
-                    min_val = GO_MIN_INT8;
-                }
-                16 => {
-                    max_val = GO_MAX_INT16;
-                    min_val = GO_MIN_INT16;
-                }
-                32 => {
-                    max_val = GO_MAX_INT32;
-                    min_val = GO_MIN_INT32;
-                }
-                64 => {
-                    max_val = GO_MAX_INT64;
-                    min_val = GO_MIN_INT64;
-                }
-                _ => {
-                    max_val = GO_MAX_INT64;
-                    min_val = GO_MIN_INT64;
-                }
-            }
-            (max_val, min_val)
-        }
-        _ => {
-            panic!("unsupported language type: {}", language);
-        }
+/// generate a random signed [Number]
+pub fn generate_random_signed_number(size: usize, language: String) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_signed_edge_value(language.to_string(), size);
+    // get a random number in range min_val ~ max_val
+    let mut res = rng.gen_range(min_val..max_val);
+    if res == max_val - 1 {
+        res = max_val;
     }
-}
-
-/// generate a random unsigned [Number] for Rust
-pub fn generate_random_unsigned_number_for_rust(size: usize) -> u128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("rust".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random signed [Number] for Rust
-pub fn generate_random_signed_number_for_rust(size: usize) -> i128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("rust".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random unsigned [Number] for C
-pub fn generate_random_unsigned_number_for_c(size: usize) -> u128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("c".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random signed [Number] for C
-pub fn generate_random_signed_number_for_c(size: usize) -> i128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("c".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random unsigned [Number] for Golang
-pub fn generate_random_unsigned_number_for_go(size: usize) -> u128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_unsigned_edge_value("go".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
-    res
-}
-
-/// generate a random signed [Number] for Golang
-pub fn generate_random_signed_number_for_go(size: usize) -> i128 {
-    let mut rng = rand::thread_rng();
-    let (max_val, min_val) = get_signed_edge_value("go".to_string(), size);
-    let res = rng.gen_range(min_val..max_val + 1);
     res
 }
 
@@ -363,6 +175,198 @@ pub fn byte_flip() {
  * Specific Mutation Strategies
  ********************/
 
+/// obtain an unsigned number greater than or equal to the current value
+pub fn strictly_increasing_mutate_for_unsigned_number(
+    cur: u128,
+    size: usize,
+    language: String,
+) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, _min_val) = get_unsigned_edge_value(language.to_string(), size);
+    if cur == max_val {
+        return cur;
+    }
+    // get a random number in range cur ~ max_val
+    let mut res: u128 = rng.gen_range(cur..max_val);
+    if res == max_val - 1 {
+        res = max_val;
+    }
+    return res;
+}
+
+/// obtain a signed number greater than or equal to the current value
+pub fn strictly_increasing_mutate_for_signed_number(
+    cur: i128,
+    size: usize,
+    language: String,
+) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, _min_val) = get_signed_edge_value(language.to_string(), size);
+    if cur == max_val {
+        return cur;
+    }
+    // get a random number in range cur ~ max_val
+    let mut res: i128 = rng.gen_range(cur..max_val);
+    if res == max_val - 1 {
+        res = max_val;
+    }
+    return res;
+}
+
+/// obtain an unsigned number less than or equal to the current value
+pub fn strictly_decreasing_mutate_for_unsigned_number(
+    cur: u128,
+    size: usize,
+    language: String,
+) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (_max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
+    if cur == min_val {
+        return cur;
+    }
+    // get a random difference in range min_val ~ cur
+    let res: u128 = rng.gen_range(min_val..cur + 1);
+    return res;
+}
+
+/// obtain an unsigned number less than or equal to the current value
+pub fn strictly_decreasing_mutate_for_signed_number(
+    cur: i128,
+    size: usize,
+    language: String,
+) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (_max_val, min_val) = get_signed_edge_value(language.to_string(), size);
+    if cur == min_val {
+        return cur;
+    }
+    // get a random difference in range min_val ~ cur
+    let res: i128 = rng.gen_range(min_val..cur + 1);
+    return res;
+}
+
+/// fine-tuning for unsigned numbers
+pub fn fine_tuning_mutate_for_unsigned_number(cur: u128, margin: u128, op: String) -> u128 {
+    let mut rng = rand::thread_rng();
+    match op.as_str() {
+        "+" => {
+            return cur + margin;
+        }
+        "-" => {
+            return cur - margin;
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return cur + margin;
+                }
+                1 => {
+                    return cur - margin;
+                }
+                _ => {
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+/// fine-tuning for signed numbers
+pub fn fine_tuning_mutate_for_signed_number(cur: i128, margin: i128, op: String) -> i128 {
+    let mut rng = rand::thread_rng();
+    match op.as_str() {
+        "+" => {
+            return cur + margin;
+        }
+        "-" => {
+            return cur - margin;
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return cur + margin;
+                }
+                1 => {
+                    return cur - margin;
+                }
+                _ => {
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+/// fine-tuning for long numbers (bigNumber or timestamp)
+pub fn fine_tuning_mutate_for_long_number(long_number: String, margin: u128, op: String) -> String {
+    let mut rng = rand::thread_rng();
+    match op.as_str() {
+        "+" => {
+            return add_string_by_bits(long_number, margin.to_string());
+        }
+        "-" => {
+            return sub_string_by_bits(long_number, margin.to_string());
+        }
+        _ => {
+            // randomly choose to increase or decrease
+            let rand: u8 = rng.gen_range(0..2);
+            match rand {
+                0 => {
+                    return add_string_by_bits(long_number, margin.to_string());
+                }
+                1 => {
+                    return sub_string_by_bits(long_number, margin.to_string());
+                }
+                _ => {
+                    return "0".to_string();
+                }
+            }
+        }
+    }
+}
+
+/// obtain the max/min unsigned value of corresponding type
+pub fn edge_value_mutate_for_unsigned_number(size: usize, language: String) -> u128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
+    // randomly select the maximum or minimum value to return
+    let choice: u8 = rng.gen_range(0..2);
+    match choice {
+        0 => {
+            return max_val;
+        }
+        1 => {
+            return min_val;
+        }
+        _ => {
+            return 0;
+        }
+    }
+}
+
+/// obtain the max/min signed value of corresponding type
+pub fn edge_value_mutate_for_signed_number(size: usize, language: String) -> i128 {
+    let mut rng = rand::thread_rng();
+    let (max_val, min_val) = get_signed_edge_value(language.to_string(), size);
+    // randomly select the maximum or minimum value to return
+    let choice: u8 = rng.gen_range(0..2);
+    match choice {
+        0 => {
+            return max_val;
+        }
+        1 => {
+            return min_val;
+        }
+        _ => {
+            return 0;
+        }
+    }
+}
+
 /********************
  * Chain-Related Operations
  ********************/
@@ -388,6 +392,7 @@ pub fn custom_mutate() {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::global_definition::*;
 
     /*
      * Test Pure Random Generation
@@ -398,41 +403,87 @@ mod tests {
         let lower: u32 = 10;
         let upper: u32 = 50;
         let n1: u32 = generate_random_number_with_range(lower, upper);
-        assert_eq!((n1 >= lower && n1 < upper), true);
+        assert!(n1 >= lower && n1 < upper);
         let lower: i64 = -1000;
         let upper: i64 = 5000;
         let n2: i64 = generate_random_number_with_range(lower, upper);
-        assert_eq!((n2 >= lower && n2 < upper), true);
+        assert!(n2 >= lower && n2 < upper);
         let lower: f32 = 0.09;
         let upper: f32 = 30.0;
         let p1: f32 = 10f32.powf(-(4 as f32));
         let n3: f32 = generate_random_number_with_range(lower, upper);
-        assert_eq!((n3 >= (lower + p1) && n3 < (upper + p1)), true);
+        assert!(n3 >= (lower + p1) && n3 < (upper + p1));
     }
 
     #[test]
     fn test_generate_random_bool() {
         let rand_bool: bool = generate_random_bool();
-        assert_eq!((rand_bool == true || rand_bool == false), true);
+        assert!(rand_bool == true || rand_bool == false);
     }
 
     #[test]
-    fn test_generate_random_unsigned_number_for_rust() {}
+    fn test_generate_random_unsigned_number() {
+        let mut n = generate_random_unsigned_number(8, "Rust".to_string());
+        assert!(n <= RUST_MAX_U8);
+        n = generate_random_unsigned_number(16, "Rust".to_string());
+        assert!(n <= RUST_MAX_U16);
+        n = generate_random_unsigned_number(32, "Rust".to_string());
+        assert!(n <= RUST_MAX_U32);
+        n = generate_random_unsigned_number(64, "Rust".to_string());
+        assert!(n <= RUST_MAX_U64);
+        n = generate_random_unsigned_number(128, "Rust".to_string());
+        assert!(n <= RUST_MAX_U128);
+
+        n = generate_random_unsigned_number(8, "C".to_string());
+        assert!(n <= C_MAX_UINT8);
+        n = generate_random_unsigned_number(16, "C".to_string());
+        assert!(n <= C_MAX_USHORT_UINT16);
+        n = generate_random_unsigned_number(32, "C".to_string());
+        assert!(n <= C_MAX_UINT_ULONG_UINT32);
+        n = generate_random_unsigned_number(64, "C".to_string());
+        assert!(n <= C_MAX_ULONGLONG_UINT64);
+
+        n = generate_random_unsigned_number(8, "Go".to_string());
+        assert!(n <= GO_MAX_UINT8);
+        n = generate_random_unsigned_number(16, "Go".to_string());
+        assert!(n <= GO_MAX_UINT16);
+        n = generate_random_unsigned_number(32, "Go".to_string());
+        assert!(n <= GO_MAX_UINT32);
+        n = generate_random_unsigned_number(64, "Go".to_string());
+        assert!(n <= GO_MAX_UINT64);
+    }
 
     #[test]
-    fn test_generate_random_signed_number_for_rust() {}
+    fn test_generate_random_signed_number() {
+        let mut n = generate_random_signed_number(8, "Rust".to_string());
+        assert!(n >= RUST_MIN_I8 && n <= RUST_MAX_I8);
+        n = generate_random_signed_number(16, "Rust".to_string());
+        assert!(n >= RUST_MIN_I16 && n <= RUST_MAX_I16);
+        n = generate_random_signed_number(32, "Rust".to_string());
+        assert!(n >= RUST_MIN_I32 && n <= RUST_MAX_I32);
+        n = generate_random_signed_number(64, "Rust".to_string());
+        assert!(n >= RUST_MIN_I64 && n <= RUST_MAX_I64);
+        n = generate_random_signed_number(128, "Rust".to_string());
+        assert!(n >= RUST_MIN_I128 && n <= RUST_MAX_I128);
 
-    #[test]
-    fn test_generate_random_unsigned_number_for_c() {}
+        n = generate_random_signed_number(8, "C".to_string());
+        assert!(n >= C_MIN_INT8 && n <= C_MAX_INT8);
+        n = generate_random_signed_number(16, "C".to_string());
+        assert!(n >= C_MIN_SHORT_INT16 && n <= C_MAX_SHORT_INT16);
+        n = generate_random_signed_number(32, "C".to_string());
+        assert!(n >= C_MIN_INT_LONG_INT32 && n <= C_MAX_INT_LONG_INT32);
+        n = generate_random_signed_number(64, "C".to_string());
+        assert!(n >= C_MIN_LONGLONG_INT64 && n <= C_MAX_LONGLONG_INT64);
 
-    #[test]
-    fn test_generate_random_signed_number_for_c() {}
-
-    #[test]
-    fn test_generate_random_unsigned_number_for_go() {}
-
-    #[test]
-    fn test_generate_random_signed_number_for_go() {}
+        n = generate_random_signed_number(8, "Go".to_string());
+        assert!(n >= GO_MIN_INT8 && n <= GO_MAX_INT8);
+        n = generate_random_signed_number(16, "Go".to_string());
+        assert!(n >= GO_MIN_INT16 && n <= GO_MAX_INT16);
+        n = generate_random_signed_number(32, "Go".to_string());
+        assert!(n >= GO_MIN_INT32 && n <= GO_MAX_INT32);
+        n = generate_random_signed_number(64, "Go".to_string());
+        assert!(n >= GO_MIN_INT64 && n <= GO_MAX_INT64);
+    }
 
     #[test]
     fn test_generate_random_byte_with_length() {
@@ -451,7 +502,7 @@ mod tests {
     fn test_generate_random_long_number_with_length() {
         let rand_long_number: String = generate_random_long_number_with_length(10);
         assert_eq!(rand_long_number.len(), 10);
-        assert_eq!(rand_long_number.chars().all(char::is_numeric), true);
+        assert!(rand_long_number.chars().all(char::is_numeric));
     }
 
     /*
@@ -459,17 +510,326 @@ mod tests {
      */
 
     #[test]
-    fn test_random_mutate_byte() {}
+    fn test_random_mutate_byte() {
+        let rand_str: Vec<u8> = generate_random_byte_with_length(10);
+        let mut_rand_str: Vec<u8> = random_mutate_byte(rand_str.clone());
+        assert_eq!(mut_rand_str.len(), 10);
+        assert_ne!(mut_rand_str, rand_str);
+    }
 
     #[test]
-    fn test_random_mutate_string() {}
+    fn test_random_mutate_string() {
+        let rand_str: String = generate_random_string_with_length(10);
+        let mut_rand_str: String = random_mutate_string(rand_str.clone());
+        assert_eq!(mut_rand_str.len(), 10);
+        assert_eq!(mut_rand_str.chars().count(), 10);
+    }
 
     #[test]
-    fn test_random_mutate_long_number() {}
+    fn test_random_mutate_long_number() {
+        let rand_long_number: String = generate_random_long_number_with_length(10);
+        let mut_rand_long_number: String = random_mutate_long_number(rand_long_number.clone());
+        assert_eq!(mut_rand_long_number.len(), 10);
+        assert!(mut_rand_long_number.chars().all(char::is_numeric));
+    }
 
     /*
      * Test Specific Mutation Strategies
      */
+
+    #[test]
+    fn test_strictly_increasing_mutate_for_unsigned_number() {
+        let mut cur: u128 = 217;
+        let mut mut_num =
+            strictly_increasing_mutate_for_unsigned_number(cur, 8, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_U8);
+        cur = 256;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 16, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_U16);
+        cur = 63357;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 32, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_U32);
+        cur = 4294967299;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 64, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_U64);
+        cur = 18446744073709551651;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 128, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_U128);
+
+        cur = 255;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 8, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_UINT8);
+        cur = 65534;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 16, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_USHORT_UINT16);
+        cur = 4294967292;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 32, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_UINT_ULONG_UINT32);
+        cur = 18446744073709551610;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 64, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_ULONGLONG_UINT64);
+
+        cur = 251;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 8, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_UINT8);
+        cur = 65534;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 16, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_UINT16);
+        cur = 4294967295;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 32, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_UINT32);
+        cur = 18446744073709551610;
+        mut_num = strictly_increasing_mutate_for_unsigned_number(cur, 64, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_UINT64);
+    }
+
+    #[test]
+    fn test_strictly_increasing_mutate_for_signed_number() {
+        let mut cur: i128 = 9;
+        let mut mut_num = strictly_increasing_mutate_for_signed_number(cur, 8, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_I8);
+        cur = -32766;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 16, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_I16);
+        cur = 2147483644;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 32, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_I32);
+        cur = -9223372036854775801;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 64, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_I64);
+        cur = 170141183460469231731687303715884105725;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 128, "rust".to_string());
+        assert!(mut_num >= cur && mut_num <= RUST_MAX_I128);
+
+        cur = 125;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 8, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_INT8);
+        cur = -32767;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 16, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_SHORT_INT16);
+        cur = 21474836;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 32, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_INT_LONG_INT32);
+        cur = -9223372036854775;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 64, "c".to_string());
+        assert!(mut_num >= cur && mut_num <= C_MAX_LONGLONG_INT64);
+
+        cur = 125;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 8, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_INT8);
+        cur = -32767;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 16, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_INT16);
+        cur = 21474836;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 32, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_INT32);
+        cur = -9223372036854775;
+        mut_num = strictly_increasing_mutate_for_signed_number(cur, 64, "go".to_string());
+        assert!(mut_num >= cur && mut_num <= GO_MAX_INT64);
+    }
+
+    #[test]
+    fn test_strictly_decreasing_mutate_for_unsigned_number() {
+        let mut cur: u128 = 217;
+        let mut mut_num =
+            strictly_decreasing_mutate_for_unsigned_number(cur, 8, "rust".to_string());
+        assert!(mut_num <= cur);
+        cur = 256;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 16, "rust".to_string());
+        assert!(mut_num <= cur);
+        cur = 63357;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 32, "rust".to_string());
+        assert!(mut_num <= cur);
+        cur = 4294967299;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 64, "rust".to_string());
+        assert!(mut_num <= cur);
+        cur = 18446744073709551651;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 128, "rust".to_string());
+        assert!(mut_num <= cur);
+
+        cur = 255;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 8, "c".to_string());
+        assert!(mut_num <= cur);
+        cur = 65534;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 16, "c".to_string());
+        assert!(mut_num <= cur);
+        cur = 4294967292;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 32, "c".to_string());
+        assert!(mut_num <= cur);
+        cur = 18446744073709551610;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 64, "c".to_string());
+        assert!(mut_num <= cur);
+
+        cur = 251;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 8, "go".to_string());
+        assert!(mut_num <= cur);
+        cur = 65534;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 16, "go".to_string());
+        assert!(mut_num <= cur);
+        cur = 4294967295;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 32, "go".to_string());
+        assert!(mut_num <= cur);
+        cur = 18446744073709551610;
+        mut_num = strictly_decreasing_mutate_for_unsigned_number(cur, 64, "go".to_string());
+        assert!(mut_num <= cur);
+    }
+
+    #[test]
+    fn test_strictly_decreasing_mutate_for_signed_number() {
+        let mut cur: i128 = 9;
+        let mut mut_num = strictly_decreasing_mutate_for_signed_number(cur, 8, "rust".to_string());
+        assert!(mut_num >= RUST_MIN_I8 && mut_num <= cur);
+        cur = -32766;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 16, "rust".to_string());
+        assert!(mut_num >= RUST_MIN_I16 && mut_num <= cur);
+        cur = 2147483644;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 32, "rust".to_string());
+        assert!(mut_num >= RUST_MIN_I32 && mut_num <= cur);
+        cur = -9223372036854775801;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 64, "rust".to_string());
+        assert!(mut_num >= RUST_MIN_I64 && mut_num <= cur);
+        cur = 170141183460469231731687303715884105725;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 128, "rust".to_string());
+        assert!(mut_num >= RUST_MIN_I128 && mut_num <= cur);
+
+        cur = 125;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 8, "c".to_string());
+        assert!(mut_num >= C_MIN_INT8 && mut_num <= cur);
+        cur = -32767;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 16, "c".to_string());
+        assert!(mut_num >= C_MIN_SHORT_INT16 && mut_num <= cur);
+        cur = 21474836;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 32, "c".to_string());
+        assert!(mut_num >= C_MIN_INT_LONG_INT32 && mut_num <= cur);
+        cur = -9223372036854775;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 64, "c".to_string());
+        assert!(mut_num >= C_MIN_LONGLONG_INT64 && mut_num <= cur);
+
+        cur = 125;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 8, "go".to_string());
+        assert!(mut_num >= GO_MIN_INT8 && mut_num <= cur);
+        cur = -32767;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 16, "go".to_string());
+        assert!(mut_num >= GO_MIN_INT16 && mut_num <= cur);
+        cur = 21474836;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 32, "go".to_string());
+        assert!(mut_num >= GO_MIN_INT32 && mut_num <= cur);
+        cur = -9223372036854775;
+        mut_num = strictly_decreasing_mutate_for_signed_number(cur, 64, "go".to_string());
+        assert!(mut_num >= GO_MIN_INT64 && mut_num <= cur);
+    }
+
+    #[test]
+    fn test_fine_tuning_mutate_for_unsigned_number() {
+        let cur: u128 = 15;
+        let margin: u128 = 1;
+        let ft1 = fine_tuning_mutate_for_unsigned_number(cur, margin, "+".to_string());
+        assert_eq!(ft1, 16);
+        let ft2 = fine_tuning_mutate_for_unsigned_number(cur, margin, "-".to_string());
+        assert_eq!(ft2, 14);
+        let ft3 = fine_tuning_mutate_for_unsigned_number(cur, margin, "*".to_string());
+        assert!(ft3 == 16 || ft3 == 14);
+    }
+
+    #[test]
+    fn test_fine_tuning_mutate_for_signed_number() {
+        let cur: i128 = -10;
+        let margin: i128 = 1;
+        let ft1 = fine_tuning_mutate_for_signed_number(cur, margin, "+".to_string());
+        assert_eq!(ft1, -9);
+        let ft2 = fine_tuning_mutate_for_signed_number(cur, margin, "-".to_string());
+        assert_eq!(ft2, -11);
+        let ft3 = fine_tuning_mutate_for_signed_number(cur, margin, "*".to_string());
+        assert!(ft3 == -11 || ft3 == -9);
+    }
+
+    #[test]
+    fn test_fine_tuning_mutate_for_long_number() {
+        let mut long_number: String = "185".to_string();
+        let mut margin: u128 = 37;
+        let mut ans: String =
+            fine_tuning_mutate_for_long_number(long_number, margin, "+".to_string());
+        assert_eq!(ans, "222");
+
+        long_number = "99".to_string();
+        margin = 2;
+        ans = fine_tuning_mutate_for_long_number(long_number, margin, "+".to_string());
+        assert_eq!(ans, "101");
+
+        long_number = "185".to_string();
+        margin = 37;
+        ans = fine_tuning_mutate_for_long_number(long_number, margin, "-".to_string());
+        assert_eq!(ans, "148");
+
+        long_number = "10000000000000".to_string();
+        margin = 10000000000002;
+        ans = fine_tuning_mutate_for_long_number(long_number, margin, "-".to_string());
+        assert_eq!(ans, "199999999999998");
+    }
+
+    #[test]
+    fn test_edge_value_mutate_for_unsigned_number() {
+        let mut ev = edge_value_mutate_for_unsigned_number(8, "Rust".to_string());
+        assert!(ev == 0 || ev == RUST_MAX_U8);
+        ev = edge_value_mutate_for_unsigned_number(16, "Rust".to_string());
+        assert!(ev == 0 || ev <= RUST_MAX_U16);
+        ev = edge_value_mutate_for_unsigned_number(32, "Rust".to_string());
+        assert!(ev == 0 || ev <= RUST_MAX_U32);
+        ev = edge_value_mutate_for_unsigned_number(64, "Rust".to_string());
+        assert!(ev == 0 || ev <= RUST_MAX_U64);
+        ev = edge_value_mutate_for_unsigned_number(128, "Rust".to_string());
+        assert!(ev == 0 || ev <= RUST_MAX_U128);
+
+        ev = edge_value_mutate_for_unsigned_number(8, "C".to_string());
+        assert!(ev == 0 || ev <= C_MAX_UINT8);
+        ev = edge_value_mutate_for_unsigned_number(16, "C".to_string());
+        assert!(ev == 0 || ev <= C_MAX_USHORT_UINT16);
+        ev = edge_value_mutate_for_unsigned_number(32, "C".to_string());
+        assert!(ev == 0 || ev <= C_MAX_UINT_ULONG_UINT32);
+        ev = edge_value_mutate_for_unsigned_number(64, "C".to_string());
+        assert!(ev == 0 || ev <= C_MAX_ULONGLONG_UINT64);
+
+        ev = edge_value_mutate_for_unsigned_number(8, "Go".to_string());
+        assert!(ev == 0 || ev <= GO_MAX_UINT8);
+        ev = edge_value_mutate_for_unsigned_number(16, "Go".to_string());
+        assert!(ev == 0 || ev <= GO_MAX_UINT16);
+        ev = edge_value_mutate_for_unsigned_number(32, "Go".to_string());
+        assert!(ev == 0 || ev <= GO_MAX_UINT32);
+        ev = edge_value_mutate_for_unsigned_number(64, "Go".to_string());
+        assert!(ev == 0 || ev <= GO_MAX_UINT64);
+    }
+
+    #[test]
+    fn test_edge_value_mutate_for_signed_number() {
+        let mut ev = edge_value_mutate_for_signed_number(8, "Rust".to_string());
+        assert!(ev == RUST_MIN_I8 || ev == RUST_MAX_I8);
+        ev = edge_value_mutate_for_signed_number(16, "Rust".to_string());
+        assert!(ev == RUST_MIN_I16 || ev == RUST_MAX_I16);
+        ev = edge_value_mutate_for_signed_number(32, "Rust".to_string());
+        assert!(ev == RUST_MIN_I32 || ev == RUST_MAX_I32);
+        ev = edge_value_mutate_for_signed_number(64, "Rust".to_string());
+        assert!(ev == RUST_MIN_I64 || ev == RUST_MAX_I64);
+        ev = edge_value_mutate_for_signed_number(128, "Rust".to_string());
+        assert!(ev == RUST_MIN_I128 || ev == RUST_MAX_I128);
+
+        ev = edge_value_mutate_for_signed_number(8, "C".to_string());
+        assert!(ev == C_MIN_INT8 || ev == C_MAX_INT8);
+        ev = edge_value_mutate_for_signed_number(16, "C".to_string());
+        assert!(ev == C_MIN_SHORT_INT16 || ev == C_MAX_SHORT_INT16);
+        ev = edge_value_mutate_for_signed_number(32, "C".to_string());
+        assert!(ev == C_MIN_INT_LONG_INT32 || ev == C_MAX_INT_LONG_INT32);
+        ev = edge_value_mutate_for_signed_number(64, "C".to_string());
+        assert!(ev == C_MIN_LONGLONG_INT64 || ev == C_MAX_LONGLONG_INT64);
+
+        ev = edge_value_mutate_for_signed_number(8, "Go".to_string());
+        assert!(ev == GO_MIN_INT8 || ev == GO_MAX_INT8);
+        ev = edge_value_mutate_for_signed_number(16, "Go".to_string());
+        assert!(ev == GO_MIN_INT16 || ev == GO_MAX_INT16);
+        ev = edge_value_mutate_for_signed_number(32, "Go".to_string());
+        assert!(ev == GO_MIN_INT32 || ev == GO_MAX_INT32);
+        ev = edge_value_mutate_for_signed_number(64, "Go".to_string());
+        assert!(ev == GO_MIN_INT64 || ev == GO_MAX_INT64);
+    }
 
     /*
      * Test Chain-Related Operations
