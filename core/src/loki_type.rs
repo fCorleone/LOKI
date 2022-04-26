@@ -3,6 +3,9 @@
 use anyhow::Result;
 use std::str::FromStr;
 
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
 #[derive(Clone)]
 pub enum BasicType {
     BOOL,
@@ -12,7 +15,10 @@ pub enum BasicType {
     BIGNUMBER,
     TIMESTAMP,
 }
-
+pub static mut TIMESTAMP_LENGTH: usize = 0;
+lazy_static! {
+    pub static ref CURRENT_LANGUAGE: Mutex<String> = Mutex::new(String::new());
+}
 /// construct basic types according to the string
 impl FromStr for BasicType {
     type Err = String;
@@ -28,6 +34,25 @@ impl FromStr for BasicType {
         };
         Ok(t)
     }
+}
+
+/// set the timestamp length
+pub fn set_timestamp_length(t_len: usize) {
+    unsafe {
+        TIMESTAMP_LENGTH = t_len;
+    }
+}
+
+/// set the current language
+pub fn set_current_language(language: String) {
+    let mut l = CURRENT_LANGUAGE.lock().unwrap();
+    *l = language;
+}
+
+/// get the current language
+pub fn get_current_language() -> String {
+    let res = CURRENT_LANGUAGE.lock().unwrap();
+    (*res).to_string()
 }
 
 /// the array type in LOKI
@@ -93,5 +118,17 @@ impl Array {
     /// set the length
     pub fn set_length(&mut self, new_len: u32) {
         self.length = new_len;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::loki_type::*;
+    #[test]
+    fn test_set_current_lan() {
+        set_current_language("RUST".to_string());
+        assert_eq!(get_current_language(), "RUST".to_string());
+        set_current_language("GO".to_string());
+        assert_eq!(get_current_language(), "GO".to_string());
     }
 }

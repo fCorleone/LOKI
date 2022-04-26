@@ -1,5 +1,5 @@
 //! Mutator used by LOKI to mutate the existing seeds or generate seeds from scratch
-use crate::loki_type::{Array, BasicType};
+use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH};
 use crate::utils::*;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
@@ -169,13 +169,55 @@ pub fn random_mutate_array(original_arr: &mut Array) -> Array {
     let ele_type = original_arr.get_ele_ty();
     if new_len > old_len {
         match ele_type {
-            BasicType::BIGNUMBER => {
+            BasicType::BOOL => {
                 let new_vals = (0..new_len - old_len)
-                    .map(|_| generate_random_long_number_with_length(1000))
+                    .map(|_| generate_random_bool().to_string())
                     .collect::<Vec<_>>();
                 original_arr.get_mut_content().extend(new_vals);
             }
-            _ => {}
+            BasicType::BYTE => {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| {
+                        String::from_utf8(generate_random_byte_with_length(
+                            rand::thread_rng().gen::<usize>(),
+                        ))
+                        .unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            }
+            BasicType::NUMBER => {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| {
+                        generate_random_signed_number(
+                            rand::thread_rng().gen::<usize>(),
+                            get_current_language(),
+                        )
+                        .to_string()
+                    })
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            }
+            BasicType::STRING => {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| generate_random_string_with_length(rand::thread_rng().gen::<usize>()))
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            }
+            BasicType::TIMESTAMP => unsafe {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| generate_random_long_number_with_length(TIMESTAMP_LENGTH))
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            },
+            BasicType::BIGNUMBER => {
+                let new_vals = (0..new_len - old_len)
+                    .map(|_| {
+                        generate_random_long_number_with_length(rand::thread_rng().gen::<usize>())
+                    })
+                    .collect::<Vec<_>>();
+                original_arr.get_mut_content().extend(new_vals);
+            }
         }
     } else if new_len < old_len {
         // delete some elements
