@@ -100,6 +100,11 @@ impl Array {
         &mut self.content
     }
 
+    /// set the content
+    pub fn set_content(&mut self, new_content: Vec<String>) {
+        self.content = new_content;
+    }
+
     /// get the element type
     pub fn get_ele_ty(&self) -> BasicType {
         self.ele_type.clone()

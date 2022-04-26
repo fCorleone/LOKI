@@ -3,6 +3,7 @@ use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH}
 use crate::utils::*;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
+use rand::prelude::SliceRandom;
 use rand::Rng;
 
 /********************
@@ -158,11 +159,10 @@ pub fn random_mutate_long_number(long_number: String) -> String {
 }
 
 /// random mutation for array, here we randomly mutate the lenth as well as the content
-pub fn random_mutate_array(original_arr: &mut Array) -> Array {
+pub fn random_mutate_array(original_arr: &mut Array) {
     if original_arr.get_length() == 0 {
-        return generate_random_array();
+        return;
     }
-    let mut _rng = rand::thread_rng();
     let old_len = original_arr.get_length();
     let new_len = mutate_array_len(old_len);
     let mut _shuffled = false;
@@ -220,27 +220,43 @@ pub fn random_mutate_array(original_arr: &mut Array) -> Array {
             }
         }
     } else if new_len < old_len {
-        // delete some elements
+        let mut rng = rand::thread_rng();
+        let mut remove_len = old_len - new_len;
+        let mut new_array = original_arr
+            .get_content()
+            .iter()
+            .filter(|_v| {
+                if rng.gen_ratio(old_len - 1, old_len) {
+                    remove_len -= 1;
+                    return true;
+                } else if remove_len <= 0 {
+                    return true;
+                }
+                return false;
+            })
+            .map(|v| v.clone())
+            .collect::<Vec<_>>();
+        if remove_len > 0 {
+            new_array.drain((new_len as usize)..);
+        }
+        original_arr.set_content(new_array);
     } else {
+        let mut rng = rand::thread_rng();
         // shuffle the original array
+        original_arr.get_mut_content().shuffle(&mut rng);
     }
-    debug_info!("mutate_array: {} -> {}", old_len, new_len);
-
-    todo!()
 }
 
 /// random choose a new len for an array
 pub fn mutate_array_len(old_len: u32) -> u32 {
-    let mut new_len = old_len;
     let mut rng = rand::thread_rng();
-    if rng.gen() {
-        while new_len == old_len || rng.gen() {
-            new_len += 1;
-        }
+    let p: u32 = rng.gen_range(0..=1);
+    if p == 0 {
+        old_len
     } else {
-        new_len = rng.gen_range(0..=10)
-    };
-    new_len
+        let new_len: u32 = rng.gen_range(0..=old_len * 2);
+        new_len
+    }
 }
 
 /// [Outer function]: bit flip
