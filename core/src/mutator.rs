@@ -230,20 +230,23 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             .iter()
             .filter(|_v| {
                 if rng.gen_ratio(old_len - 1, old_len) && remove_len > 0 {
-                    remove_len -= 1;
                     return true;
                 } else if remove_len <= 0 {
                     return true;
                 }
-                return false;
+                else {
+                    remove_len -= 1;
+                    return false;
+                }
             })
             .map(|v| v.clone())
             .collect::<Vec<_>>();
-        println!("Current new_array is {:?}",new_array);
+        println!("Current new_array is {:?} and new length is {:?}",new_array, new_len);
         if remove_len > 0 {
             // bug here in this function
             new_array.drain((new_len as usize)..);
         }
+        println!("Current new_array after draining is {:?}",new_array);
         original_arr.set_content(new_array);
     } else {
         let mut rng = rand::thread_rng();
@@ -259,7 +262,7 @@ pub fn mutate_array_len(old_len: u32) -> u32 {
     if p == 0 {
         old_len
     } else {
-        let new_len: u32 = rng.gen_range(0..=old_len * 2);
+        let new_len: u32 = rng.gen_range(1..=old_len * 2);
         new_len
     }
 }
