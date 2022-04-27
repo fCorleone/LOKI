@@ -15,7 +15,7 @@ pub enum BasicType {
     BIGNUMBER,
     TIMESTAMP,
 }
-pub static mut TIMESTAMP_LENGTH: usize = 0;
+pub static mut TIMESTAMP_LENGTH: usize = 16;
 lazy_static! {
     pub static ref CURRENT_LANGUAGE: Mutex<String> = Mutex::new(String::new());
 }

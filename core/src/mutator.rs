@@ -1,6 +1,7 @@
 //! Mutator used by LOKI to mutate the existing seeds or generate seeds from scratch
 use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH};
 use crate::utils::*;
+use log::debug;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Alphanumeric;
 use rand::prelude::SliceRandom;
@@ -61,7 +62,9 @@ pub fn generate_random_byte_with_length(len: usize) -> Vec<u8> {
         .take(len)
         .map(char::from)
         .collect::<String>();
-    res.as_bytes().to_vec()
+    let mut return_vec = res.as_bytes().to_vec();
+    return_vec.drain(len..);
+    return_vec
 }
 
 /// generate a random [String] with given length
@@ -179,10 +182,11 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             BasicType::BYTE => {
                 let new_vals = (0..new_len - old_len)
                     .map(|_| {
-                        String::from_utf8(generate_random_byte_with_length(
-                            rand::thread_rng().gen::<usize>(),
-                        ))
-                        .unwrap()
+                        // String::from_utf8(generate_random_byte_with_length(
+                        //     1,
+                        // ))
+                        // .unwrap()
+                        generate_random_byte_with_length(1).iter().map(|v|v.to_string()).collect()
                     })
                     .collect::<Vec<_>>();
                 original_arr.get_mut_content().extend(new_vals);
@@ -191,7 +195,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
                 let new_vals = (0..new_len - old_len)
                     .map(|_| {
                         generate_random_signed_number(
-                            rand::thread_rng().gen::<usize>(),
+                            rand::thread_rng().gen_range(0..=100),
                             get_current_language(),
                         )
                         .to_string()
@@ -203,9 +207,9 @@ pub fn random_mutate_array(original_arr: &mut Array) {
                 let new_vals = (0..new_len - old_len)
                     .map(|_| generate_random_string_with_length(rand::thread_rng().gen_range(0..=100)))
                     .collect::<Vec<_>>();
-                    println!("new_vals are {:?}",new_vals);
+                    debug!("new_vals are {:?}",new_vals);
                     original_arr.get_mut_content().extend(new_vals);
-                    println!("new arr is :{:?}",original_arr.get_mut_content());
+                    debug!("new arr is :{:?}",original_arr.get_mut_content());
             }
             BasicType::TIMESTAMP => unsafe {
                 let new_vals = (0..new_len - old_len)
@@ -216,7 +220,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             BasicType::BIGNUMBER => {
                 let new_vals = (0..new_len - old_len)
                     .map(|_| {
-                        generate_random_long_number_with_length(rand::thread_rng().gen::<usize>())
+                        generate_random_long_number_with_length(rand::thread_rng().gen_range(0..=100))
                     })
                     .collect::<Vec<_>>();
                 original_arr.get_mut_content().extend(new_vals);
@@ -241,24 +245,28 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             })
             .map(|v| v.clone())
             .collect::<Vec<_>>();
-        println!("Current new_array is {:?} and new length is {:?}",new_array, new_len);
+        debug!("Current new_array is {:?} and new length is {:?}",new_array, new_len);
         if remove_len > 0 {
             // bug here in this function
             new_array.drain((new_len as usize)..);
         }
-        println!("Current new_array after draining is {:?}",new_array);
+        debug!("Current new_array after draining is {:?}",new_array);
         original_arr.set_content(new_array);
     } else {
         let mut rng = rand::thread_rng();
         // shuffle the original array
         original_arr.get_mut_content().shuffle(&mut rng);
     }
+    original_arr.set_length(new_len);
+    if new_len != old_len{
+        original_arr.set_fixed(false);
+    }
 }
 
 /// random choose a new len for an array
 pub fn mutate_array_len(old_len: u32) -> u32 {
     let mut rng = rand::thread_rng();
-    let p: u32 = rng.gen_range(0..=1);
+    let p: u32 = rng.gen_range(0..=2);
     if p == 0 {
         old_len
     } else {
@@ -943,6 +951,32 @@ mod tests {
         str_arr.set_content(vec!(String::from("hello"),String::from("nihao"),String::from("aloha")));
         random_mutate_array(&mut str_arr);
         println!("new array is {:?}",str_arr);
+
+        let mut bool_arr = Array::new(BasicType::BOOL, 4, false);
+        bool_arr.set_content(vec!(String::from("true"),String::from("false"),String::from("false"),String::from("true")));
+        random_mutate_array(&mut bool_arr);
+        println!("new array is {:?}",bool_arr);
+
+        let mut byte_arr = Array::new(BasicType::BYTE, 2, false);
+        byte_arr.set_content(vec!(String::from("105"),String::from("110")));
+        random_mutate_array(&mut byte_arr);
+        println!("new array is {:?}",byte_arr);
+
+        let mut number_arr = Array::new(BasicType::NUMBER, 5, false);
+        number_arr.set_content(vec!(String::from("105"),String::from("11"),String::from("12"),String::from("25"),String::from("13980205")));
+        random_mutate_array(&mut number_arr);
+        println!("new array is {:?}",number_arr);
+
+        let mut timestamp_arr = Array::new(BasicType::TIMESTAMP, 1, false);
+        timestamp_arr.set_content(vec!(String::from("8920949309172812")));
+        random_mutate_array(&mut timestamp_arr);
+        println!("new array is {:?}",timestamp_arr);
+
+        let mut bignumber_arr = Array::new(BasicType::BIGNUMBER, 1, false);
+        bignumber_arr.set_content(vec!(String::from("8920949309172812")));
+        random_mutate_array(&mut bignumber_arr);
+        println!("new array is {:?}", bignumber_arr);
+
     }
 
     /*
