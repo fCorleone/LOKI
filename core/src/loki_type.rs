@@ -17,7 +17,7 @@ pub enum BasicType {
 }
 pub static mut TIMESTAMP_LENGTH: usize = 16;
 lazy_static! {
-    pub static ref CURRENT_LANGUAGE: Mutex<String> = Mutex::new(String::new());
+    pub static ref CURRENT_LANGUAGE: Mutex<String> = Mutex::new(String::from("CPP"));
 }
 /// construct basic types according to the string
 impl FromStr for BasicType {
