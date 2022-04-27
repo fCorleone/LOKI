@@ -165,6 +165,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
     }
     let old_len = original_arr.get_length();
     let new_len = mutate_array_len(old_len);
+    println!("old len is {:?} while new len is {:?}",old_len, new_len);
     let mut _shuffled = false;
     let ele_type = original_arr.get_ele_ty();
     if new_len > old_len {
@@ -200,9 +201,11 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             }
             BasicType::STRING => {
                 let new_vals = (0..new_len - old_len)
-                    .map(|_| generate_random_string_with_length(rand::thread_rng().gen::<usize>()))
+                    .map(|_| generate_random_string_with_length(rand::thread_rng().gen_range(0..=100)))
                     .collect::<Vec<_>>();
-                original_arr.get_mut_content().extend(new_vals);
+                    println!("new_vals are {:?}",new_vals);
+                    original_arr.get_mut_content().extend(new_vals);
+                    println!("new arr is :{:?}",original_arr.get_mut_content());
             }
             BasicType::TIMESTAMP => unsafe {
                 let new_vals = (0..new_len - old_len)
@@ -226,7 +229,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             .get_content()
             .iter()
             .filter(|_v| {
-                if rng.gen_ratio(old_len - 1, old_len) {
+                if rng.gen_ratio(old_len - 1, old_len) && remove_len > 0 {
                     remove_len -= 1;
                     return true;
                 } else if remove_len <= 0 {
@@ -236,7 +239,9 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             })
             .map(|v| v.clone())
             .collect::<Vec<_>>();
+        println!("Current new_array is {:?}",new_array);
         if remove_len > 0 {
+            // bug here in this function
             new_array.drain((new_len as usize)..);
         }
         original_arr.set_content(new_array);
@@ -927,6 +932,14 @@ mod tests {
         assert!(ev == GO_MIN_INT32 || ev == GO_MAX_INT32);
         ev = edge_value_mutate_for_signed_number(64, "Go".to_string());
         assert!(ev == GO_MIN_INT64 || ev == GO_MAX_INT64);
+    }
+
+    #[test]
+    fn test_array_mutation(){
+        let mut str_arr = Array::new(BasicType::STRING, 3, false);
+        str_arr.set_content(vec!(String::from("hello"),String::from("nihao"),String::from("aloha")));
+        random_mutate_array(&mut str_arr);
+        println!("new array is {:?}",str_arr);
     }
 
     /*

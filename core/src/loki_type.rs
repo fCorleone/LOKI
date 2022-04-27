@@ -6,7 +6,7 @@ use std::str::FromStr;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub enum BasicType {
     BOOL,
     NUMBER,
@@ -56,6 +56,7 @@ pub fn get_current_language() -> String {
 }
 
 /// the array type in LOKI
+#[derive(Debug)]
 pub struct Array {
     ele_type: BasicType,
     length: u32,
