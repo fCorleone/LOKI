@@ -22,14 +22,14 @@ where
     res
 }
 
-/// generate a random [Bool] value
+/// generate a random [BasicType::BOOL] value
 pub fn generate_random_bool() -> bool {
     let mut rng = rand::thread_rng();
     let res: bool = rng.gen::<bool>();
     res
 }
 
-/// generate a random unsigned [Number]
+/// generate a random unsigned [BasicType::NUMBER]
 pub fn generate_random_unsigned_number(size: usize, language: String) -> u128 {
     let mut rng = rand::thread_rng();
     let (max_val, min_val) = get_unsigned_edge_value(language.to_string(), size);
@@ -41,7 +41,7 @@ pub fn generate_random_unsigned_number(size: usize, language: String) -> u128 {
     res
 }
 
-/// generate a random signed [Number]
+/// generate a random signed [BasicType::NUMBER]
 pub fn generate_random_signed_number(size: usize, language: String) -> i128 {
     let mut rng = rand::thread_rng();
     let (max_val, min_val) = get_signed_edge_value(language.to_string(), size);
@@ -53,7 +53,7 @@ pub fn generate_random_signed_number(size: usize, language: String) -> i128 {
     res
 }
 
-/// generate a random [Byte] slice with given length
+/// generate a random [BasicType::BYTE] slice with given length
 /// the output byte contains ASCII codes
 pub fn generate_random_byte_with_length(len: usize) -> Vec<u8> {
     let rng = rand::thread_rng();
@@ -67,7 +67,7 @@ pub fn generate_random_byte_with_length(len: usize) -> Vec<u8> {
     return_vec
 }
 
-/// generate a random [String] with given length
+/// generate a random [BasicType::STRING] with given length
 /// the output string contains ASCII letters and numbers: a-z, A-Z and 0-9.
 pub fn generate_random_string_with_length(len: usize) -> String {
     let rng = rand::thread_rng();
@@ -79,7 +79,7 @@ pub fn generate_random_string_with_length(len: usize) -> String {
     res
 }
 
-/// generate a random [BigNumber] or [Timestamp] with given length
+/// generate a random [BasicType::BIGNUMBER] or [BasicType::TIMESTAMP] with given length
 pub fn generate_random_long_number_with_length(len: usize) -> String {
     let mut rng = rand::thread_rng();
     const CHARSET: &[u8] = b"0123456789";
@@ -564,12 +564,12 @@ pub fn edge_value_mutate_for_signed_number(size: usize, language: String) -> i12
  ********************/
 
 /// calculate hash value, with different types of hash algorithms
-pub fn calc_hash<T>(_param_list: Vec<T>) {
+pub fn calc_hash<T>(_param_list: Vec<T>) -> String{
     todo!();
 }
 
 /// calculate signature value, with different types of signature algorithms
-pub fn calc_signature<T>(_param_list: Vec<T>) {
+pub fn calc_signature<T>(_param_list: Vec<T>) -> String {
     todo!();
 }
 
