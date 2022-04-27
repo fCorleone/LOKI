@@ -109,7 +109,7 @@ pub fn get_signed_edge_value(language: String, size: usize) -> (i128, i128) {
             }
             (max_val, min_val)
         }
-        "c" |"cpp"|"c++"=> {
+        "c" | "cpp" | "c++" => {
             match size {
                 8 => {
                     max_val = C_MAX_INT8;

@@ -6,7 +6,7 @@ use std::str::FromStr;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum BasicType {
     BOOL,
     NUMBER,
