@@ -29,7 +29,7 @@ pub fn get_unsigned_edge_value(language: String, size: usize) -> (u128, u128) {
             }
             (max_val, min_val)
         }
-        "c" | "cpp" |"c++" => {
+        "c" | "cpp" | "c++" => {
             match size {
                 8 => {
                     max_val = C_MAX_UINT8;

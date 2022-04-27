@@ -564,7 +564,7 @@ pub fn edge_value_mutate_for_signed_number(size: usize, language: String) -> i12
  ********************/
 
 /// calculate hash value, with different types of hash algorithms
-pub fn calc_hash<T>(_param_list: Vec<T>) -> String{
+pub fn calc_hash<T>(_param_list: Vec<T>) -> String {
     todo!();
 }
 
