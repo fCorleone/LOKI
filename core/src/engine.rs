@@ -1,10 +1,8 @@
 //! LOKI fuzzing engine
 
-use crate::loki_message::LokiMessage;
+use crate::loki_message::*;
 use crate::message_pool::MessagePool;
 use crate::neighbour::Neighbour;
-// use crate::error::LOKIError;
-use crate::scepter::MESSAGE_TYPE;
 use crate::state_model::{State, StateEdge, StateModel};
 use crate::target_strategy::*;
 use crate::user_interface::*;
@@ -270,7 +268,7 @@ impl Engine {
             let temp_type: u32 = rng.gen::<u32>();
             if temp_type % 4 == 0 {
                 // 1) randomly choose a message type
-                let chosen_msg_type = MESSAGE_TYPE
+                let chosen_msg_type = get_message_types()
                     .choose_multiple(&mut rand::thread_rng(), 1)
                     .map(|x| x.to_string().clone())
                     .collect::<Vec<String>>()[0]
@@ -333,7 +331,7 @@ impl Engine {
             } else if temp_type % 4 == 2 {
                 // 3) various random messages for each target
                 for target in send_node_ids {
-                    let chosen_msg_type = MESSAGE_TYPE
+                    let chosen_msg_type = get_message_types()
                         .choose_multiple(&mut rand::thread_rng(), 1)
                         .map(|x| x.to_string().clone())
                         .collect::<Vec<String>>()[0]

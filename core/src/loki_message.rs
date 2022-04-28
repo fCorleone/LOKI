@@ -2,6 +2,27 @@
 
 use anyhow::Result;
 use json::JsonValue;
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+#[allow(unused_imports)]
+use loki_spec::loki_spec::*;
+
+lazy_static! {
+    /// all the message types supported by LOKI
+    pub static ref MESSAGE_TYPE: Mutex<Vec<String>> = Mutex::new(vec!());
+}
+
+/// set all of the message types
+pub fn add_message_type(new_type: String) {
+    let mut l = MESSAGE_TYPE.lock().unwrap();
+    (*l).push(new_type);
+}
+
+/// get all the message types
+pub fn get_message_types() -> Vec<String> {
+    let res = MESSAGE_TYPE.lock().unwrap();
+    (*res).clone()
+}
 
 /// the message structure in LOKI
 #[derive(Debug, Clone)]
