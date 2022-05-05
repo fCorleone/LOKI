@@ -134,8 +134,8 @@ impl Engine {
         };
 
         // mutate the message and return
-        let next_msg = org_msg.mutate();
-        next_msg
+        org_msg.mutate();
+        org_msg
     }
 
     /// passive sending fuzz packets with initial seeds
@@ -175,7 +175,7 @@ impl Engine {
             .unwrap();
 
         // update the current state of loki
-        let next_msg_type = based_seed.get_msg_type();
+        let next_msg_type = based_seed.get_structure().get_name();
 
         match self
             .get_mut_state_model()
@@ -193,8 +193,8 @@ impl Engine {
         };
 
         // mutate the message and return
-        let next_msg = based_seed.mutate();
-        next_msg
+        based_seed.mutate();
+        based_seed.clone()
     }
 
     /// active sending fuzz packets
@@ -536,7 +536,7 @@ impl Engine {
         if !node_ids.contains(&from_node) {
             self.connnected_nodes.push(Neighbour::new(
                 from_node.clone(),
-                rec_message.get_msg_type(),
+                rec_message.get_structure().get_name(),
             ))
         }
         Ok(true)
@@ -550,7 +550,7 @@ impl Engine {
                 return Err(e).with_context(|| format!("Received a Message without From Node"));
             }
         };
-        let new_type = rec_message.get_msg_type();
+        let new_type = rec_message.get_structure().get_name();
 
         // After that, update the sender's state, first we find the sender node
         let sender_node: &mut Neighbour = self
@@ -566,7 +566,7 @@ impl Engine {
 
     /// check whether we should add new edges to the state model when received some msgs
     pub fn check_and_update_new_edges(&mut self, rec_message: &LokiMessage) -> Result<bool> {
-        let new_type = rec_message.get_msg_type();
+        let new_type = rec_message.get_structure().get_name();
         let cur_type = self.get_cur_state();
         // update the edges if there is no edge before, the initial weight is 1.0
         let cur_state = match self

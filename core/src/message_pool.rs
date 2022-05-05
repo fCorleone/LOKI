@@ -46,7 +46,7 @@ impl MessagePool {
     /// find the latest message of certain type
     pub fn find_latest_message_with_type(&self, msg_type: String) -> Option<LokiMessage> {
         for mes in self.messages.iter().rev() {
-            if mes.get_msg_type() == msg_type {
+            if mes.get_structure().get_name() == msg_type {
                 return Some(mes.clone());
             }
         }

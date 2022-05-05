@@ -1,9 +1,12 @@
 //! The normalization message representation in LOKI
 
+use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH};
+use crate::mutator::*;
 use anyhow::Result;
 use lazy_static::lazy_static;
 #[allow(unused_imports)]
 use loki_spec::loki_spec::*;
+use serde_json::{Map, Number, Value};
 use std::sync::Mutex;
 
 lazy_static! {
@@ -29,54 +32,53 @@ pub fn get_message_types() -> Vec<String> {
 pub struct LokiMessage {
     /// the nodeid who sends the message
     from: String,
-    // the content of the message, represented as a json object
+    // the structure of the message, represented as a json object
     // use json::JsonValue::new_object() to create an empty json object
-    // content: JsonValue,
-    /// directly using the message struct defined in loki_spec
-    content: message::Message,
-    /// the type of the message
-    msg_type: String,
+    // structure: JsonValue,
+    /// using the message struct defined in loki_spec
+    structure: message::Message,
+    /// the content of current message, represented as a hash map
+    content: Map<String, Value>,
 }
 
 impl LokiMessage {
-    /// construct a new message with content
+    /// construct a new message with structure
     pub fn new(
         from: String,
-        content: loki_spec::loki_spec::message::Message,
-        msg_type: String,
+        structure: loki_spec::loki_spec::message::Message,
+        content: Map<String, Value>,
     ) -> Self {
         Self {
             from,
+            structure,
             content,
-            msg_type,
         }
     }
 
     /// construct a new message with only source node
     pub fn new_with_from(from: String) -> Self {
-        let content = loki_spec::loki_spec::message::Message::new("".to_string(), vec![], vec![]);
-        let msg_type = "".to_string();
+        let structure = loki_spec::loki_spec::message::Message::new("".to_string(), vec![], vec![]);
+        let content = Map::new();
         Self {
             from,
+            structure,
             content,
-            msg_type,
         }
     }
 
-    /// set the message type
-    pub fn set_msg_type(&mut self, msg_type: String) -> Result<bool> {
-        self.msg_type = msg_type;
-        Ok(true)
+    /// get the content
+    pub fn get_content(&self) -> Map<String, Value> {
+        self.content.clone()
     }
 
-    /// get the message type
-    pub fn get_msg_type(&self) -> String {
-        self.msg_type.clone()
+    /// get the mutate content
+    pub fn get_mut_content(&mut self) -> &mut Map<String, Value> {
+        &mut self.content
     }
 
-    /// get the mutable message type
-    pub fn get_mut_msg_type(&mut self) -> &mut String {
-        &mut self.msg_type
+    /// set the current content
+    pub fn set_content(&mut self, new_content: Map<String, Value>) {
+        self.content = new_content;
     }
 
     /// set the from neighbour of a message
@@ -95,28 +97,295 @@ impl LokiMessage {
         Ok(&mut self.from)
     }
 
-    /// set the content of the message
-    pub fn set_content(
+    /// set the structure of the message
+    pub fn set_structure(
         &mut self,
-        new_content: loki_spec::loki_spec::message::Message,
+        new_structure: loki_spec::loki_spec::message::Message,
     ) -> Result<bool> {
-        self.content = new_content;
+        self.structure = new_structure;
         Ok(true)
     }
 
-    /// get the content of the message
-    pub fn get_content(&self) -> loki_spec::loki_spec::message::Message {
-        self.content.clone()
+    /// get the structure of the message
+    pub fn get_structure(&self) -> loki_spec::loki_spec::message::Message {
+        self.structure.clone()
     }
 
-    /// get the mutable content of the message
-    pub fn get_mut_content(&mut self) -> &mut loki_spec::loki_spec::message::Message {
-        &mut self.content
+    /// get the mutable structure of the message
+    pub fn get_mut_structure(&mut self) -> &mut loki_spec::loki_spec::message::Message {
+        &mut self.structure
     }
 
     /// mutate the current message
-    pub fn mutate(&mut self) -> LokiMessage {
-        todo!()
+    pub fn mutate(&mut self) {
+        let current_structure = self.get_structure();
+        for structure_attr in current_structure.get_attrs() {
+            let attr_type = structure_attr.get_attr_type();
+            let attr_mutation = structure_attr.get_attr_mutator();
+            match &attr_type[..] {
+                "Number" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    if cur_val.is_u64() {
+                        let cur_u64_val = cur_val.as_u64().unwrap();
+                        let mut mutated_val: u128 = 0;
+                        match &attr_mutation[..] {
+                            "random_Number" | "edge_value" => {
+                                mutated_val =
+                                    generate_random_unsigned_number(64, get_current_language());
+                            }
+                            "Decreasing" => {
+                                mutated_val = strictly_decreasing_mutate_for_unsigned_number(
+                                    cur_u64_val as u128,
+                                    64,
+                                    get_current_language(),
+                                );
+                            }
+                            "Increaseing" => {
+                                mutated_val = strictly_increasing_mutate_for_unsigned_number(
+                                    cur_u64_val as u128,
+                                    64,
+                                    get_current_language(),
+                                );
+                            }
+                            _ => {}
+                        }
+                        self.get_mut_content()[&structure_attr.get_attr_name()] =
+                            Value::Number(Number::from(mutated_val as u64));
+                    } else if cur_val.is_i64() {
+                        let cur_i64_val = cur_val.as_i64().unwrap();
+                        let mut mutated_val: i128 = 0;
+                        match &attr_mutation[..] {
+                            "random_Number" | "edge_value" => {
+                                mutated_val =
+                                    generate_random_signed_number(64, get_current_language());
+                            }
+                            "Decreasing" => {
+                                mutated_val = strictly_decreasing_mutate_for_signed_number(
+                                    cur_i64_val as i128,
+                                    64,
+                                    get_current_language(),
+                                );
+                            }
+                            "Increaseing" => {
+                                mutated_val = strictly_increasing_mutate_for_signed_number(
+                                    cur_i64_val as i128,
+                                    64,
+                                    get_current_language(),
+                                );
+                            }
+                            _ => {}
+                        }
+                        self.get_mut_content()[&structure_attr.get_attr_name()] =
+                            Value::Number(Number::from(mutated_val as i64));
+                    }
+                }
+                "String" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_string_val = cur_val.as_str().unwrap();
+                    let mutated_val: String = random_mutate_string(cur_string_val.to_string());
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::String(String::from(mutated_val));
+                }
+                "Bool" => {
+                    let mutated_val = generate_random_bool();
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::Bool(mutated_val);
+                }
+                "Byte" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_bytes_val = cur_val.as_array().unwrap().clone();
+                    let cur_vecu8_val: Vec<u8> = cur_bytes_val
+                        .iter()
+                        .map(|v| (v.as_u64().unwrap() as u8))
+                        .collect();
+                    let mutated_val = random_mutate_byte(cur_vecu8_val);
+                    self.get_mut_content()[&structure_attr.get_attr_name()] = Value::Array(
+                        mutated_val
+                            .iter()
+                            .map(|v| Value::Number(Number::from(*v as u64)))
+                            .collect::<Vec<_>>(),
+                    );
+                }
+                "Timestamp" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_timestamp_val = cur_val.as_str().unwrap();
+                    let mut mutated_val: String = cur_timestamp_val.to_string();
+                    match &attr_mutation[..] {
+                        "random_Timestamp" => {
+                            mutated_val = random_mutate_long_number(cur_timestamp_val.to_string());
+                        }
+                        "Decreasing" => {
+                            mutated_val = fine_tuning_mutate_for_long_number(
+                                cur_timestamp_val.to_string(),
+                                100,
+                                '-'.to_string(),
+                            );
+                        }
+                        "Increasing" => {
+                            mutated_val = fine_tuning_mutate_for_long_number(
+                                cur_timestamp_val.to_string(),
+                                100,
+                                '+'.to_string(),
+                            );
+                        }
+                        _ => {}
+                    };
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::String(String::from(mutated_val));
+                }
+                "Hash" => {
+                    todo!()
+                }
+                "BigNumber" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_bignumber_val = cur_val.as_str().unwrap();
+                    let mut mutated_val: String = cur_bignumber_val.to_string();
+                    match &attr_mutation[..] {
+                        "random_Timestamp" => {
+                            mutated_val = random_mutate_long_number(cur_bignumber_val.to_string());
+                        }
+                        "Decreasing" => {
+                            mutated_val = fine_tuning_mutate_for_long_number(
+                                cur_bignumber_val.to_string(),
+                                100,
+                                '-'.to_string(),
+                            );
+                        }
+                        "Increasing" => {
+                            mutated_val = fine_tuning_mutate_for_long_number(
+                                cur_bignumber_val.to_string(),
+                                100,
+                                '+'.to_string(),
+                            );
+                        }
+                        _ => {}
+                    };
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::String(String::from(mutated_val));
+                }
+                "Array" => {
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_array_val = cur_val.as_array().unwrap();
+                    let array_ref = structure_attr.get_attr_reff();
+                    let array_ele = current_structure.get_attr_by_name(array_ref).unwrap();
+                    let array_type = array_ele.get_attr_type();
+                    let mut current_array = match &array_type.to_ascii_lowercase()[..] {
+                        "number" => {
+                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                                Ok(v) => v,
+                                Err(_) => 64,
+                            };
+                            let mut arr = Array::new(BasicType::NUMBER, ele_len, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        }
+                        "string" => {
+                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                                Ok(v) => v,
+                                Err(_) => 64,
+                            };
+                            let mut arr = Array::new(BasicType::STRING, ele_len, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        }
+                        "bool" => {
+                            let mut arr = Array::new(BasicType::BOOL, 8, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        }
+                        "byte" => {
+                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                                Ok(v) => v,
+                                Err(_) => 64,
+                            };
+                            let mut arr = Array::new(BasicType::BYTE, ele_len, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        }
+                        "timestamp" => unsafe {
+                            let mut arr =
+                                Array::new(BasicType::TIMESTAMP, TIMESTAMP_LENGTH as u32, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        },
+                        "bignumber" => {
+                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                                Ok(v) => v,
+                                Err(_) => 64,
+                            };
+                            let mut arr = Array::new(BasicType::BIGNUMBER, ele_len, false);
+                            arr.set_content(cur_array_val.iter().map(|v| v.to_string()).collect());
+                            arr
+                        }
+                        _ => Array::new(BasicType::NUMBER, 64, false),
+                    };
+                    random_mutate_array(&mut current_array);
+                    let mutated_arr = match &array_type.to_ascii_lowercase()[..] {
+                        "number" => Value::Array(
+                            current_array
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::Number(Number::from(v.parse::<u64>().unwrap())))
+                                .collect(),
+                        ),
+                        "string" => Value::Array(
+                            current_array
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::String(String::from(v)))
+                                .collect(),
+                        ),
+                        "bool" => Value::Array(
+                            current_array
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::Bool(v.parse::<bool>().unwrap()))
+                                .collect(),
+                        ),
+                        "byte" => Value::Array(
+                            current_array
+                                .get_content()
+                                .iter()
+                                .map(|v| {
+                                    Value::Number(Number::from(v.parse::<u8>().unwrap() as u64))
+                                })
+                                .collect(),
+                        ),
+                        "timestamp" | "bignumber" => Value::Array(
+                            current_array
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::String(String::from(v)))
+                                .collect(),
+                        ),
+                        _ => Value::Array(vec![]),
+                    };
+                    self.get_mut_content()[&structure_attr.get_attr_name()] = mutated_arr;
+                }
+                "Signature" => {
+                    todo!()
+                }
+                _ => {}
+            }
+        }
     }
 
     /// generate a new message of certain type
