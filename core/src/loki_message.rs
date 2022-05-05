@@ -1,11 +1,10 @@
 //! The normalization message representation in LOKI
 
 use anyhow::Result;
-use json::JsonValue;
 use lazy_static::lazy_static;
-use std::sync::Mutex;
 #[allow(unused_imports)]
 use loki_spec::loki_spec::*;
+use std::sync::Mutex;
 
 lazy_static! {
     /// all the message types supported by LOKI
@@ -30,16 +29,22 @@ pub fn get_message_types() -> Vec<String> {
 pub struct LokiMessage {
     /// the nodeid who sends the message
     from: String,
-    /// the content of the message, represented as a json object
-    /// use json::JsonValue::new_object() to create an empty json object
-    content: JsonValue,
+    // the content of the message, represented as a json object
+    // use json::JsonValue::new_object() to create an empty json object
+    // content: JsonValue,
+    /// directly using the message struct defined in loki_spec
+    content: message::Message,
     /// the type of the message
     msg_type: String,
 }
 
 impl LokiMessage {
     /// construct a new message with content
-    pub fn new(from: String, content: JsonValue, msg_type: String) -> Self {
+    pub fn new(
+        from: String,
+        content: loki_spec::loki_spec::message::Message,
+        msg_type: String,
+    ) -> Self {
         Self {
             from,
             content,
@@ -49,7 +54,7 @@ impl LokiMessage {
 
     /// construct a new message with only source node
     pub fn new_with_from(from: String) -> Self {
-        let content = JsonValue::new_object();
+        let content = loki_spec::loki_spec::message::Message::new("".to_string(), vec![], vec![]);
         let msg_type = "".to_string();
         Self {
             from,
@@ -91,18 +96,21 @@ impl LokiMessage {
     }
 
     /// set the content of the message
-    pub fn set_content(&mut self, new_content: JsonValue) -> Result<bool> {
+    pub fn set_content(
+        &mut self,
+        new_content: loki_spec::loki_spec::message::Message,
+    ) -> Result<bool> {
         self.content = new_content;
         Ok(true)
     }
 
     /// get the content of the message
-    pub fn get_content(&self) -> JsonValue {
+    pub fn get_content(&self) -> loki_spec::loki_spec::message::Message {
         self.content.clone()
     }
 
     /// get the mutable content of the message
-    pub fn get_mut_content(&mut self) -> &mut JsonValue {
+    pub fn get_mut_content(&mut self) -> &mut loki_spec::loki_spec::message::Message {
         &mut self.content
     }
 
