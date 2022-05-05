@@ -390,6 +390,145 @@ impl LokiMessage {
 
     /// generate a new message of certain type
     pub fn generate(_msg_type: String) -> Self {
-        todo!()
+        let structure = get_structure_from_msg_type(_msg_type);
+        let mut new_loki_msg = LokiMessage::new_with_from("Loki Node".to_string());
+        new_loki_msg.set_structure(structure.clone()).unwrap();
+        let mut new_content: Map<String, Value> = Map::new();
+        for structure_attr in structure.get_attrs() {
+            let attr_type = structure_attr.get_attr_type();
+            match &attr_type[..] {
+                "Number" => {
+                    let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
+                        Ok(v) => v,
+                        Err(_) => 64,
+                    };
+                    let generated_val =
+                        generate_random_unsigned_number(ele_len as usize, get_current_language());
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::Number(Number::from(generated_val as u64)),
+                    );
+                }
+                "String" => {
+                    let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
+                        Ok(v) => v,
+                        Err(_) => 64,
+                    };
+                    let generated_val = generate_random_string_with_length(ele_len as usize);
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::String(String::from(generated_val)),
+                    );
+                }
+                "Bool" => {
+                    let generated_val = generate_random_bool();
+                    new_content.insert(structure_attr.get_attr_name(), Value::Bool(generated_val));
+                }
+                "Byte" => {
+                    let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
+                        Ok(v) => v,
+                        Err(_) => 64,
+                    };
+                    let generated_val = generate_random_byte_with_length(ele_len as usize);
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::Array(
+                            generated_val
+                                .iter()
+                                .map(|v| Value::Number(Number::from(*v as u64)))
+                                .collect::<Vec<_>>(),
+                        ),
+                    );
+                }
+                "Timestamp" => unsafe {
+                    let generated_val = generate_random_long_number_with_length(TIMESTAMP_LENGTH);
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::String(String::from(generated_val)),
+                    );
+                },
+                "Hash" => {
+                    todo!()
+                }
+                "BigNumber" => {
+                    let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
+                        Ok(v) => v,
+                        Err(_) => 64,
+                    };
+                    let generated_val = generate_random_long_number_with_length(ele_len as usize);
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::String(String::from(generated_val)),
+                    );
+                }
+                "Array" => {
+                    let array_ref = structure_attr.get_attr_reff();
+                    let array_ele = structure.get_attr_by_name(array_ref).unwrap();
+                    let array_type = array_ele.get_attr_type();
+                    let generated_val = match &array_type.to_ascii_lowercase()[..] {
+                        "number" => generate_random_array(&BasicType::NUMBER),
+                        "string" => generate_random_array(&BasicType::STRING),
+                        "bool" => generate_random_array(&BasicType::BOOL),
+                        "byte" => generate_random_array(&BasicType::BYTE),
+                        "timestamp" => generate_random_array(&BasicType::TIMESTAMP),
+                        "bignumber" => generate_random_array(&BasicType::BIGNUMBER),
+                        _ => generate_random_array(&BasicType::NUMBER),
+                    };
+                    let generated_arr = match &array_type.to_ascii_lowercase()[..] {
+                        "number" => Value::Array(
+                            generated_val
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::Number(Number::from(v.parse::<u64>().unwrap())))
+                                .collect(),
+                        ),
+                        "string" => Value::Array(
+                            generated_val
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::String(String::from(v)))
+                                .collect(),
+                        ),
+                        "bool" => Value::Array(
+                            generated_val
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::Bool(v.parse::<bool>().unwrap()))
+                                .collect(),
+                        ),
+                        "byte" => Value::Array(
+                            generated_val
+                                .get_content()
+                                .iter()
+                                .map(|v| {
+                                    Value::Number(Number::from(v.parse::<u8>().unwrap() as u64))
+                                })
+                                .collect(),
+                        ),
+                        "timestamp" | "bignumber" => Value::Array(
+                            generated_val
+                                .get_content()
+                                .iter()
+                                .map(|v| Value::String(String::from(v)))
+                                .collect(),
+                        ),
+                        _ => Value::Array(vec![]),
+                    };
+                    new_content.insert(structure_attr.get_attr_name(), generated_arr);
+                }
+                "Signature" => {
+                    todo!()
+                }
+                _ => {}
+            }
+        }
+        new_loki_msg.set_content(new_content);
+        new_loki_msg
     }
+}
+
+/// get the message structure from the name of a msg type
+/// This function should be implemented in the loki_spec module
+pub fn get_structure_from_msg_type(_msg_type: String) -> message::Message {
+    todo!()
 }
