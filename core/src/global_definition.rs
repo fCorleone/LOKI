@@ -4,6 +4,10 @@
  * Definition of Boundary Values of Integer Types in Different Languages
  ********************/
 #![allow(missing_docs)]
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 pub const MIN_UINT: u128 = 0;
 
 /// Rust: unsigned integer values
@@ -56,3 +60,26 @@ pub const GO_MAX_INT32: i128 = 2147483647;
 pub const GO_MIN_INT32: i128 = -2147483648;
 pub const GO_MAX_INT64: i128 = 9223372036854775807;
 pub const GO_MIN_INT64: i128 = -9223372036854775808;
+
+/// indicates the encoded method of current blockchain
+/// 0 means protobuf
+/// 1 means RLP
+/// 2 means user-defined encode function
+pub const ENCODE_METHOD: u32 = 0;
+
+lazy_static! {
+    pub static ref HASH_FUNCTIONS: Mutex<HashMap<String, fn(Vec<u8>) -> Vec<u8>>> =
+        Mutex::new(HashMap::new());
+}
+
+/// set all of the hash functions
+pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> Vec<u8>) {
+    let mut l = HASH_FUNCTIONS.lock().unwrap();
+    (*l).insert(new_type, hash_fn);
+}
+
+/// get the hash function
+pub fn get_message_types_from_name(hash_type: String) -> fn(Vec<u8>) -> Vec<u8>{
+    let res = HASH_FUNCTIONS.lock().unwrap();
+    *(*res).clone().get(&hash_type).expect("Cannot find the ")
+}

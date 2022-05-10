@@ -32,6 +32,7 @@ pub mod verbose;
 pub mod engine;
 pub mod error;
 pub mod global_definition;
+pub mod hash_functions;
 pub mod loki_message;
 pub mod loki_type;
 pub mod message_pool;

@@ -1,5 +1,6 @@
 //! The normalization message representation in LOKI
 
+use crate::global_definition::*;
 use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH};
 use crate::mutator::*;
 use anyhow::Result;
@@ -27,7 +28,7 @@ pub fn get_message_types() -> Vec<String> {
 }
 
 /// the message structure in LOKI
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 /// the loki message struct
 pub struct LokiMessage {
     /// the nodeid who sends the message
@@ -246,6 +247,8 @@ impl LokiMessage {
                         Value::String(String::from(mutated_val));
                 }
                 "Hash" => {
+                    // first get the parameters of the hash function
+
                     todo!()
                 }
                 "BigNumber" => {
@@ -524,6 +527,47 @@ impl LokiMessage {
         }
         new_loki_msg.set_content(new_content);
         new_loki_msg
+    }
+
+    /// serialize a loki message to stream
+    /// support for protobuf, RLP and user-defined encoding methods
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        match ENCODE_METHOD {
+            0 => {
+                // here we use protobuf to encode and decode the stream and message
+                // match self.write_to_bytes() {
+                //     Ok(res) => {return Ok(res);}
+                //     Err(e) => {Err(anyhow!("Failed to encode the loki message using protobuf!"))}
+                // }
+                todo!()
+            }
+            1 => {
+                todo!()
+            }
+            _ => {
+                todo!()
+            }
+        }
+    }
+
+    /// decode a stream to loki message
+    pub fn decode(_stream: Vec<u8>) -> Result<Self> {
+        match ENCODE_METHOD {
+            0 => {
+                // here we use protobuf to encode and decode the stream and message
+                // match LokiMessage::parse_from_bytes(&stream[..]) {
+                //     Ok(res) => {Ok(res)}
+                //     Err(e) => {Err(anyhow!("Failed to parse the stream using protobuf!"))}
+                // }
+                todo!()
+            }
+            1 => {
+                todo!()
+            }
+            _ => {
+                todo!()
+            }
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 //! LOKI fuzzing engine
 
+use crate::global_definition::*;
+use crate::hash_functions::*;
 use crate::loki_message::*;
 use crate::message_pool::MessagePool;
 use crate::neighbour::Neighbour;
@@ -39,6 +41,13 @@ pub struct Engine {
 }
 
 fn empty_func() {}
+
+/// config the hash functions, this should be done right after the fuzzer starts
+pub fn config_hash_func() {
+    add_hash_function("keccak256".to_string(), keccak256);
+    add_hash_function("sha256".to_string(), sha3_256);
+    add_hash_function("sm3".to_string(), sm3);
+}
 
 impl Engine {
     /// create a fuzz engine

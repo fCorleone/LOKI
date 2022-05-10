@@ -1,0 +1,20 @@
+<LOKI specname="fisco:example">
+    <Message name="BaseMessage">
+        <Attribute name="version" type="number" size="32" mutation="random_number"/>
+        <Attribute name="index" type="number" size="64" mutation="random_number"/>
+        <Attribute name="proposal_hash" type="hash" ref="Proposal"/>
+        <Attribute name="view" type="number" size="64" mutation="random_number"/>
+        <Attribute name="timestamp" type="number" size="64" mutation="random_number"/>
+        <Attribute name="generatedFrom" type="number" size="64" mutation="random_number"/>
+        <Attribute name="signatureHash" type="hash" ref="BaseMessage.signatureData"/>
+        <Attribute name="signatureData" type="bytes" mutation="random_byte"/>
+    </Message>
+	
+	<Message name="PBFTRawProposal">
+		<Attribute name="View" type="number" size="64" mutation="random_number"/>
+		<Attribute name="Seq" type="number" size="64" mutation="random_number" />
+		<Attribute name="Proposal" type="Struct" ref="Proposal"/>
+		<Attribute name="PrevCommitSignatures" type="array" ref="Signature"/>
+		<ExceptedMsg mag_name="Prepare" identify="View,Seq" msg_identify="Prepare.View,Prepare.Seq" />
+	</Message>
+</LOKI>
