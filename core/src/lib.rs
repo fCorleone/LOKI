@@ -29,6 +29,7 @@
 #[macro_use]
 #[allow(missing_docs)]
 pub mod verbose;
+pub mod encoding;
 pub mod engine;
 pub mod error;
 pub mod global_definition;

@@ -81,5 +81,8 @@ pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> String) {
 /// get the hash function
 pub fn get_message_types_from_name(hash_type: String) -> fn(Vec<u8>) -> String {
     let res = HASH_FUNCTIONS.lock().unwrap();
-    *(*res).clone().get(&hash_type).expect("Cannot find the hash function")
+    *(*res)
+        .clone()
+        .get(&hash_type)
+        .expect("Cannot find the hash function")
 }

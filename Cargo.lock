@@ -99,6 +99,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "hex",
+ "integer-encoding",
  "lazy_static",
  "log",
  "loki_spec",
@@ -163,6 +164,12 @@ checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "integer-encoding"
+version = "3.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e85a1509a128c855368e135cffcde7eac17d8e1083f41e2b98c58bc1a5074be"
 
 [[package]]
 name = "itoa"
