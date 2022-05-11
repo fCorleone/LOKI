@@ -241,7 +241,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
     }
     let old_len = original_arr.get_length();
     let new_len = mutate_array_len(old_len);
-    debug!("old len is {:?} while new len is {:?}", old_len, new_len);
+    // debug!("old len is {:?} while new len is {:?}", old_len, new_len);
     let mut _shuffled = false;
     let ele_type = original_arr.get_ele_ty();
     if new_len > old_len {
@@ -281,9 +281,9 @@ pub fn random_mutate_array(original_arr: &mut Array) {
                         generate_random_string_with_length(rand::thread_rng().gen_range(0..=100))
                     })
                     .collect::<Vec<_>>();
-                debug!("new_vals are {:?}", new_vals);
+                // debug!("new_vals are {:?}", new_vals);
                 original_arr.get_mut_content().extend(new_vals);
-                debug!("new arr is :{:?}", original_arr.get_mut_content());
+                // debug!("new arr is :{:?}", original_arr.get_mut_content());
             }
             BasicType::TIMESTAMP => unsafe {
                 let new_vals = (0..new_len - old_len)
@@ -328,7 +328,7 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             // bug here in this function
             new_array.drain((new_len as usize)..);
         }
-        debug!("Current new_array after draining is {:?}", new_array);
+        // debug!("Current new_array after draining is {:?}", new_array);
         original_arr.set_content(new_array);
     } else {
         let mut rng = rand::thread_rng();
@@ -1032,7 +1032,7 @@ mod tests {
             String::from("aloha"),
         ]);
         random_mutate_array(&mut str_arr);
-        println!("new array is {:?}", str_arr);
+        debug!("new array is {:?}", str_arr);
 
         let mut bool_arr = Array::new(BasicType::BOOL, 4, false);
         bool_arr.set_content(vec![
@@ -1042,12 +1042,12 @@ mod tests {
             String::from("true"),
         ]);
         random_mutate_array(&mut bool_arr);
-        println!("new array is {:?}", bool_arr);
+        debug!("new array is {:?}", bool_arr);
 
         let mut byte_arr = Array::new(BasicType::BYTE, 2, false);
         byte_arr.set_content(vec![String::from("105"), String::from("110")]);
         random_mutate_array(&mut byte_arr);
-        println!("new array is {:?}", byte_arr);
+        debug!("new array is {:?}", byte_arr);
 
         let mut number_arr = Array::new(BasicType::NUMBER, 5, false);
         number_arr.set_content(vec![
@@ -1058,17 +1058,17 @@ mod tests {
             String::from("13980205"),
         ]);
         random_mutate_array(&mut number_arr);
-        println!("new array is {:?}", number_arr);
+        debug!("new array is {:?}", number_arr);
 
         let mut timestamp_arr = Array::new(BasicType::TIMESTAMP, 1, false);
         timestamp_arr.set_content(vec![String::from("8920949309172812")]);
         random_mutate_array(&mut timestamp_arr);
-        println!("new array is {:?}", timestamp_arr);
+        debug!("new array is {:?}", timestamp_arr);
 
         let mut bignumber_arr = Array::new(BasicType::BIGNUMBER, 1, false);
         bignumber_arr.set_content(vec![String::from("8920949309172812")]);
         random_mutate_array(&mut bignumber_arr);
-        println!("new array is {:?}", bignumber_arr);
+        debug!("new array is {:?}", bignumber_arr);
     }
 
     #[test]
@@ -1079,12 +1079,12 @@ mod tests {
         let string_arr = generate_random_array(&BasicType::STRING);
         let timestamp_arr = generate_random_array(&BasicType::TIMESTAMP);
         let bignum_arr = generate_random_array(&BasicType::BIGNUMBER);
-        println!("The genrated array is {:?}", num_arr);
-        println!("The genrated array is {:?}", bool_arr);
-        println!("The genrated array is {:?}", byte_arr);
-        println!("The genrated array is {:?}", string_arr);
-        println!("The genrated array is {:?}", timestamp_arr);
-        println!("The genrated array is {:?}", bignum_arr);
+        debug!("The genrated array is {:?}", num_arr);
+        debug!("The genrated array is {:?}", bool_arr);
+        debug!("The genrated array is {:?}", byte_arr);
+        debug!("The genrated array is {:?}", string_arr);
+        debug!("The genrated array is {:?}", timestamp_arr);
+        debug!("The genrated array is {:?}", bignum_arr);
     }
 
     /*

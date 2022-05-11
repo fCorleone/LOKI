@@ -68,18 +68,18 @@ pub const GO_MIN_INT64: i128 = -9223372036854775808;
 pub const ENCODE_METHOD: u32 = 0;
 
 lazy_static! {
-    pub static ref HASH_FUNCTIONS: Mutex<HashMap<String, fn(Vec<u8>) -> Vec<u8>>> =
+    pub static ref HASH_FUNCTIONS: Mutex<HashMap<String, fn(Vec<u8>) -> String>> =
         Mutex::new(HashMap::new());
 }
 
 /// set all of the hash functions
-pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> Vec<u8>) {
+pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> String) {
     let mut l = HASH_FUNCTIONS.lock().unwrap();
     (*l).insert(new_type, hash_fn);
 }
 
 /// get the hash function
-pub fn get_message_types_from_name(hash_type: String) -> fn(Vec<u8>) -> Vec<u8>{
+pub fn get_message_types_from_name(hash_type: String) -> fn(Vec<u8>) -> String {
     let res = HASH_FUNCTIONS.lock().unwrap();
-    *(*res).clone().get(&hash_type).expect("Cannot find the ")
+    *(*res).clone().get(&hash_type).expect("Cannot find the hash function")
 }

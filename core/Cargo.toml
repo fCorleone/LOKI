@@ -14,3 +14,4 @@ loki_spec = {path = "../loki_spec"}
 serde_json = "1.0"
 sha3 = "0.10.1"
 sm3 = "0.4.1"
+hex = "0.4.3"
