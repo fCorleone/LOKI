@@ -287,12 +287,13 @@ impl LokiMessage {
                         .get(&structure_attr.get_attr_name())
                         .unwrap();
                     let cur_array_val = cur_val.as_array().unwrap();
-                    let array_ref = structure_attr.get_attr_reff();
-                    let array_ele = current_structure.get_attr_by_name(array_ref).unwrap();
-                    let array_type = array_ele.get_attr_type();
+                    // let array_ref = structure_attr.get_attr_reff();
+                    // let array_ele = current_structure.get_attr_by_name(array_ref).unwrap();
+                    // let array_type = array_ele.get_attr_type();
+                    let array_type = structure_attr.get_attr_reff();
                     let mut current_array = match &array_type.to_ascii_lowercase()[..] {
                         "number" => {
-                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                            let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
                                 Ok(v) => v,
                                 Err(_) => 64,
                             };
@@ -301,7 +302,7 @@ impl LokiMessage {
                             arr
                         }
                         "string" => {
-                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                            let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
                                 Ok(v) => v,
                                 Err(_) => 64,
                             };
@@ -315,7 +316,7 @@ impl LokiMessage {
                             arr
                         }
                         "byte" => {
-                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                            let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
                                 Ok(v) => v,
                                 Err(_) => 64,
                             };
@@ -330,7 +331,7 @@ impl LokiMessage {
                             arr
                         },
                         "bignumber" => {
-                            let ele_len = match array_ele.get_attr_size().parse::<u32>() {
+                            let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
                                 Ok(v) => v,
                                 Err(_) => 64,
                             };
@@ -384,6 +385,9 @@ impl LokiMessage {
                     self.get_mut_content()[&structure_attr.get_attr_name()] = mutated_arr;
                 }
                 "Signature" => {
+                    todo!()
+                }
+                "Struct" => {
                     todo!()
                 }
                 _ => {}
@@ -522,6 +526,9 @@ impl LokiMessage {
                 "Signature" => {
                     todo!()
                 }
+                "Struct" => {
+                    todo!()
+                }
                 _ => {}
             }
         }
@@ -575,4 +582,10 @@ impl LokiMessage {
 /// This function should be implemented in the loki_spec module
 pub fn get_structure_from_msg_type(_msg_type: String) -> message::Message {
     todo!()
+}
+
+/// generate a loki message by the message type
+pub fn generate_loki_message_by_type(msg_type: String) -> LokiMessage {
+    let structure = get_structure_from_msg_type(msg_type);
+    LokiMessage::new("".to_string(), structure, Map::new())
 }
