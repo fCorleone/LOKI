@@ -5,6 +5,7 @@
  ********************/
 #![allow(missing_docs)]
 use lazy_static::lazy_static;
+use loki_spec::loki_spec::spec_visitor::*;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -72,6 +73,22 @@ lazy_static! {
         Mutex::new(HashMap::new());
 }
 
+pub static mut SPEC_VISITOR: Myvisitor<'static> = Myvisitor::new_const();
+
+/// set the spec visitor
+pub fn set_spec_visitor(new_visitor: Myvisitor<'static>){
+    unsafe{
+        SPEC_VISITOR = new_visitor;
+    }
+}
+
+/// get the spec visitor
+pub fn get_spec_visitor() ->  &'static Myvisitor<'static> {
+    unsafe{
+        &SPEC_VISITOR
+    }
+}
+
 /// set all of the hash functions
 pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> String) {
     let mut l = HASH_FUNCTIONS.lock().unwrap();
@@ -79,7 +96,7 @@ pub fn add_hash_function(new_type: String, hash_fn: fn(Vec<u8>) -> String) {
 }
 
 /// get the hash function
-pub fn get_message_types_from_name(hash_type: String) -> fn(Vec<u8>) -> String {
+pub fn get_hash_func_from_name(hash_type: String) -> fn(Vec<u8>) -> String {
     let res = HASH_FUNCTIONS.lock().unwrap();
     *(*res)
         .clone()

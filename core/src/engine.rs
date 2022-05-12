@@ -449,6 +449,7 @@ impl Engine {
     /// After that, the engine constructs the state model
     /// Then, the engine start the active sending thread and start fuzz
     pub fn start_fuzz_engine(&mut self) -> Result<()> {
+        // set the global variables such as SPEC_VISITOR
         todo!()
     }
 

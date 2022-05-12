@@ -5,6 +5,7 @@ use crate::loki_type::{get_current_language, Array, BasicType, TIMESTAMP_LENGTH}
 use crate::mutator::*;
 use anyhow::Result;
 use lazy_static::lazy_static;
+use loki_spec::loki_spec::spec_visitor::*;
 #[allow(unused_imports)]
 use loki_spec::loki_spec::*;
 use serde_json::{Map, Number, Value};
@@ -388,17 +389,19 @@ impl LokiMessage {
                     todo!()
                 }
                 "Struct" => {
-                    let cur_val = self
-                        .get_mut_content()
-                        .get(&structure_attr.get_attr_name())
-                        .unwrap();
-                    let cur_object_val = cur_val.as_object().unwrap().clone();
-                    let refer_message = structure_attr.get_attr_reff();
-                    let mut refer_loki_msg = generate_loki_message_by_type(refer_message);
-                    refer_loki_msg.set_content(cur_object_val);
-                    refer_loki_msg.mutate();
-                    self.get_mut_content()[&structure_attr.get_attr_name()] =
-                        Value::Object(refer_loki_msg.get_content());
+                    
+                        let cur_val = self
+                            .get_mut_content()
+                            .get(&structure_attr.get_attr_name())
+                            .unwrap();
+                        let cur_object_val = cur_val.as_object().unwrap().clone();
+                        let refer_message = structure_attr.get_attr_reff();
+                        let mut refer_loki_msg = generate_loki_message_by_type(refer_message,&get_spec_visitor());
+                        refer_loki_msg.set_content(cur_object_val);
+                        refer_loki_msg.mutate();
+                        self.get_mut_content()[&structure_attr.get_attr_name()] =
+                            Value::Object(refer_loki_msg.get_content());
+                    
                 }
                 _ => {}
             }
@@ -406,8 +409,9 @@ impl LokiMessage {
     }
 
     /// generate a new message of certain type
-    pub fn generate(_msg_type: String) -> Self {
-        let structure = get_structure_from_msg_type(_msg_type);
+    pub fn generate(msg_type: String) -> Self {
+        unsafe{
+        let structure = get_spec_visitor().get_clone_structure_from_msg_type(msg_type).expect("cannot find the message in the spec visitor");
         let mut new_loki_msg = LokiMessage::new_with_from("Loki Node".to_string());
         new_loki_msg.set_structure(structure.clone()).unwrap();
         let mut new_content: Map<String, Value> = Map::new();
@@ -457,7 +461,7 @@ impl LokiMessage {
                         ),
                     );
                 }
-                "Timestamp" => unsafe {
+                "Timestamp" => {
                     let generated_val = generate_random_long_number_with_length(TIMESTAMP_LENGTH);
                     new_content.insert(
                         structure_attr.get_attr_name(),
@@ -549,6 +553,7 @@ impl LokiMessage {
         }
         new_loki_msg.set_content(new_content);
         new_loki_msg
+        }
     }
 
     /// serialize a loki message to stream
@@ -593,14 +598,10 @@ impl LokiMessage {
     }
 }
 
-/// get the message structure from the name of a msg type
-/// This function should be implemented in the loki_spec module
-pub fn get_structure_from_msg_type(_msg_type: String) -> message::Message {
-    todo!()
-}
-
 /// generate a loki message by the message type
-pub fn generate_loki_message_by_type(msg_type: String) -> LokiMessage {
-    let structure = get_structure_from_msg_type(msg_type);
+pub fn generate_loki_message_by_type(msg_type: String, loki_visitor: &Myvisitor) -> LokiMessage {
+    let structure = loki_visitor
+        .get_clone_structure_from_msg_type(msg_type)
+        .expect("cannot find the message in the spec visitor");
     LokiMessage::new("".to_string(), structure, Map::new())
 }
