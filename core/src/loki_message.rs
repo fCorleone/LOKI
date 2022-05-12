@@ -388,7 +388,17 @@ impl LokiMessage {
                     todo!()
                 }
                 "Struct" => {
-                    todo!()
+                    let cur_val = self
+                        .get_mut_content()
+                        .get(&structure_attr.get_attr_name())
+                        .unwrap();
+                    let cur_object_val = cur_val.as_object().unwrap().clone();
+                    let refer_message = structure_attr.get_attr_reff();
+                    let mut refer_loki_msg = generate_loki_message_by_type(refer_message);
+                    refer_loki_msg.set_content(cur_object_val);
+                    refer_loki_msg.mutate();
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::Object(refer_loki_msg.get_content());
                 }
                 _ => {}
             }
@@ -527,7 +537,12 @@ impl LokiMessage {
                     todo!()
                 }
                 "Struct" => {
-                    todo!()
+                    let refer_message = structure_attr.get_attr_reff();
+                    let refer_loki_msg = LokiMessage::generate(refer_message);
+                    new_content.insert(
+                        structure_attr.get_attr_name(),
+                        Value::Object(refer_loki_msg.get_content()),
+                    );
                 }
                 _ => {}
             }
