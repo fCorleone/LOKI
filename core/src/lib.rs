@@ -39,6 +39,7 @@ pub mod loki_type;
 pub mod message_pool;
 pub mod mutator;
 pub mod neighbour;
+pub mod signature_functions;
 pub mod state_model;
 pub mod target_strategy;
 pub mod user_interface;

@@ -180,6 +180,7 @@ pub fn length_delimited_bytes_without_field(data: &mut Vec<u8>) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // use serde_json::{Map, Number, Value};
     /*
      * Test encoding implementation
      */
@@ -189,5 +190,11 @@ mod tests {
         let res = length_delimited_string(2, "testing".to_string());
         let expect_res = vec![0x12_u8, 0x07_u8, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67];
         assert_eq!(res, expect_res);
+    }
+
+    #[test]
+    fn test_protobuf_encode() {
+        // write some tests after the loki spec is working!
+        todo!();
     }
 }
