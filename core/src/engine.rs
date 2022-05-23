@@ -8,13 +8,22 @@ use crate::neighbour::Neighbour;
 use crate::state_model::{State, StateEdge, StateModel};
 use crate::target_strategy::*;
 use crate::user_interface::*;
+use antlr_rust as _;
 use anyhow::{anyhow, Context, Result};
 use rand::seq::SliceRandom;
 use rand::Rng;
+use std::fs;
+use std::path::PathBuf;
+use std::vec;
 use std::{thread, time};
 
-// define the callback type
-type CallBack = fn();
+use antlr_rust::common_token_stream::CommonTokenStream;
+use antlr_rust::input_stream::InputStream;
+use antlr_rust::token_factory::CommonTokenFactory;
+use antlr_rust::tree::Visitable;
+use loki_spec::loki_spec::loki_speclexer::*;
+use loki_spec::loki_spec::loki_specparser::*;
+use loki_spec::loki_spec::spec_visitor::*;
 
 /// the interval of active package sending, the unit is second
 const SENDING_INTERVAL: u64 = 5;
@@ -32,15 +41,7 @@ pub struct Engine {
     state_model: StateModel,
     /// current state of LOKI node
     cur_state: String,
-
-    // some callback that need to be implementd by the user
-    /// signing callback function
-    sign_call_back: CallBack,
-    /// packets sending callback function
-    send_call_back: CallBack,
 }
-
-fn empty_func() {}
 
 /// config the hash functions, this should be done right after the fuzzer starts
 pub fn config_hash_func() {
@@ -56,16 +57,12 @@ impl Engine {
         connnected_nodes: Vec<Neighbour>,
         state_model: StateModel,
         cur_state: String,
-        sign_call_back: CallBack,
-        send_call_back: CallBack,
     ) -> Self {
         Self {
             message_pool,
             connnected_nodes,
             state_model,
             cur_state,
-            sign_call_back,
-            send_call_back,
         }
     }
 
@@ -75,15 +72,11 @@ impl Engine {
         let connnected_nodes = Vec::new();
         let state_model = StateModel::new(Vec::new());
         let cur_state = "".to_string();
-        let sign_call_back: CallBack = empty_func;
-        let send_call_back: CallBack = empty_func;
         Self {
             message_pool,
             connnected_nodes,
             state_model,
             cur_state,
-            sign_call_back,
-            send_call_back,
         }
     }
 
@@ -443,31 +436,78 @@ impl Engine {
         &mut self.cur_state
     }
 
-    /// start the fuzz engine, the main controller of the LOKI
+    /// init the fuzz engine, the main controller of the LOKI
     /// First, the engine resisters the callback functions
     /// Then, the engine inits the scepter parser
     /// After that, the engine constructs the state model
     /// Then, the engine start the active sending thread and start fuzz
-    pub fn start_fuzz_engine(&mut self) -> Result<()> {
-        // set the global variables such as SPEC_VISITOR
-        todo!()
+    pub fn start_fuzz_engine() -> Self {
+        // set the global variables
+        // === HERE TO MODIFY ===
+        crate::loki_type::set_timestamp_length(16);
+        crate::loki_type::set_current_language("Cpp".to_string());
+        // === === === === == ===
+        println!(
+            "LOKI has startted!!! Current blockchain's language is {:?}.",
+            crate::loki_type::get_current_language()
+        );
+        // get the spec file location
+        let mut config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        // === HERE TO MODIFY ===
+        config_path.push("testcase");
+        config_path.push("simple.spec");
+        // === === === === == ===
+        println!(
+            "Loading the spec file, its location is {:?}...",
+            config_path
+        );
+        let input_str: String = fs::read_to_string(config_path).unwrap();
+        let input = InputStream::new(&*input_str);
+        let tf = CommonTokenFactory::default();
+        let lexer = Loki_specLexer::new_with_token_factory(input, &tf);
+        let token_source = CommonTokenStream::new(lexer);
+        let mut parser = Loki_specParser::new(token_source);
+        let result = parser.document();
+        // Check whether the loading is successful
+        let result_ctx = result.expect("Error: load spec file unsuccessfully!!!!");
+        println!("Load successfully! Now set the message list!!!");
+        let mut visitor = Specvisitor::default();
+        result_ctx.accept(&mut visitor);
+        let msgs_list = visitor.get_spec_messages().clone();
+        set_message_list(msgs_list);
+        // Then LOKI sets the initial state model
+        let state_model = StateModel::initialize_the_state_model();
+        println!("LOKI has set up the initial state model!!!");
+        // Then LOKI initializes the neighbour nodes info
+        println!("Loading the neighbour nodes!!!");
+        let cur_state = state_model.clone().get_states()[0].get_msg_type();
+        // // === HERE TO MODIFY ===
+        // const NEIGHBOUR_NUM:u32 = 3;
+        // let mut neighbours = Vec::<Neighbour>::new();
+        // for i in (0..NEIGHBOUR_NUM){
+        //     let nei = Neighbour::new(String::from(i),cur_state.cloen())
+        // }
+        //  // === === === === == ===
+
+        // Then LOKI constructs the engine, the message pool is empty and the neighbour nodes are empty too
+        let loki_engine = Engine::new(MessagePool::new(vec![]), vec![], state_model, cur_state);
+        println!("LOKI engined constructed!!!");
+        // println!("LOKI engined constructed!!! Now we start the active fuzzing thread!!!");
+        // thread::spawn(|| {
+        //     loki_engine.active_sending();
+        // });
+        // println!("OK the active fuzzing thread has started!!! All is well!!! Enjoy LOKI's tricks!!!");
+        loki_engine
+    }
+
+    /// start the active fuzzing in a new thread
+    pub fn start_active_fuzzing(&'static mut self) {
+        thread::spawn(|| {
+            self.active_sending();
+        });
     }
 
     // some protected functions that can only be called in the engine object
-    /// set the packet sending callback function
-    #[allow(dead_code)]
-    pub fn set_send_callback(&mut self, f: CallBack) -> Result<bool> {
-        self.send_call_back = f;
-        Ok(true)
-    }
-
-    /// set the signing callback function
-    #[allow(dead_code)]
-    pub fn set_sign_callback(&mut self, f: CallBack) -> Result<bool> {
-        self.sign_call_back = f;
-        Ok(true)
-    }
-
     /// set the message_pool
     #[allow(dead_code)]
     pub fn set_message_pool(&mut self, new_pool: MessagePool) -> Result<bool> {

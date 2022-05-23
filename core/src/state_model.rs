@@ -123,10 +123,41 @@ impl StateModel {
         Self { states }
     }
 
+    /// initialize the state model
+    pub fn initialize_the_state_model() -> Self {
+        let msg_list = crate::global_definition::get_message_list();
+        let mut res = Self::new(vec![]);
+        for msg in msg_list {
+            let name = msg.get_name();
+            let expected_msg = msg.get_expect_msgs();
+            let edge_weight = 1.0 / (expected_msg.len() as f32);
+            let mut state = State::new(name);
+            for exp in expected_msg {
+                let new_edge = StateEdge {
+                    to_state: exp.get_expect_name(),
+                    weight: edge_weight,
+                };
+                state.add_cur_edges(new_edge).unwrap();
+            }
+            res.add_new_state(state).unwrap();
+        }
+        res
+    }
+
     /// add a new state
     pub fn add_new_state(&mut self, new_state: State) -> Result<bool> {
         self.states.push(new_state);
         Ok(true)
+    }
+
+    /// get the state
+    pub fn get_states(&self) -> &Vec<State> {
+        &self.states
+    }
+
+    /// get the mut state
+    pub fn get_mut_states(&mut self) -> &mut Vec<State> {
+        &mut self.states
     }
 
     /// delete a state

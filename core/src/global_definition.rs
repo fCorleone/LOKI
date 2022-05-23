@@ -5,7 +5,6 @@
  ********************/
 #![allow(missing_docs)]
 use lazy_static::lazy_static;
-use loki_spec::loki_spec::spec_visitor::*;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -73,20 +72,18 @@ lazy_static! {
         Mutex::new(HashMap::new());
 }
 
-pub static mut SPEC_VISITOR: Myvisitor<'static> = Myvisitor::new_const();
+pub static mut SPEC_MESSAGES: Vec<loki_spec::loki_spec::message::Message> = vec![];
 
 /// set the spec visitor
-pub fn set_spec_visitor(new_visitor: Myvisitor<'static>){
-    unsafe{
-        SPEC_VISITOR = new_visitor;
+pub fn set_message_list(new_messages_list: Vec<loki_spec::loki_spec::message::Message>) {
+    unsafe {
+        SPEC_MESSAGES = new_messages_list;
     }
 }
 
 /// get the spec visitor
-pub fn get_spec_visitor() ->  &'static Myvisitor<'static> {
-    unsafe{
-        &SPEC_VISITOR
-    }
+pub fn get_message_list() -> Vec<loki_spec::loki_spec::message::Message> {
+    unsafe { SPEC_MESSAGES.clone() }
 }
 
 /// set all of the hash functions

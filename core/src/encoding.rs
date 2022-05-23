@@ -1,12 +1,11 @@
 //! encoding and decoding methods for different rules
 //! Currently, we support the protobuf and RLP
 
-use crate::global_definition::*;
 use crate::loki_message::*;
 use integer_encoding::VarInt;
 
 /// the encoding ways for protobuf
-pub fn encode_protobuf(message: LokiMessage) -> Vec<u8> {
+pub fn encode_protobuf(message: &LokiMessage) -> Vec<u8> {
     let mut res: Vec<u8> = vec![];
     let cur_structure = message.get_structure();
     let mut field_num = 1;
@@ -118,18 +117,15 @@ pub fn encode_protobuf(message: LokiMessage) -> Vec<u8> {
             }
             // length delimited
             "Struct" => {
-                
-                    // this is a new json object
-                    let cur_val = msg_content.get(&attr_name).unwrap();
-                    let refer_message = attr.get_attr_reff();
-                    let mut refer_loki_msg =
-                        generate_loki_message_by_type(refer_message, &get_spec_visitor());
-                    refer_loki_msg.set_content(cur_val.as_object().unwrap().clone());
-                    // call the encode for the new message
-                    let mut refer_data = encode_protobuf(refer_loki_msg);
-                    let mut data = length_delimited_bytes(field_num, &mut refer_data);
-                    res.append(&mut data);
-                
+                // this is a new json object
+                let cur_val = msg_content.get(&attr_name).unwrap();
+                let refer_message = attr.get_attr_reff();
+                let mut refer_loki_msg = generate_loki_message_by_type(refer_message);
+                refer_loki_msg.set_content(cur_val.as_object().unwrap().clone());
+                // call the encode for the new message
+                let mut refer_data = encode_protobuf(&refer_loki_msg);
+                let mut data = length_delimited_bytes(field_num, &mut refer_data);
+                res.append(&mut data);
             }
             _ => {}
         }
@@ -184,10 +180,6 @@ pub fn length_delimited_bytes_without_field(data: &mut Vec<u8>) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use serde_json::{Map, Number, Value};
-    /*
-     * Test encoding implementation
-     */
 
     #[test]
     fn test_length_delimited() {
@@ -198,7 +190,6 @@ mod tests {
 
     #[test]
     fn test_protobuf_encode() {
-        // write some tests after the loki spec is working!
         assert!(true);
     }
 }

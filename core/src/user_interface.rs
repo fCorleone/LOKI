@@ -1,14 +1,15 @@
 //! The interface that user needs to extend and implement for LOKI adaption
 use crate::loki_message::LokiMessage;
+use serde_json::{Map, Value};
 
 /// the adatption interface
-/// unwrap the LokiMessage into developer defined message type
-pub fn unwrap() -> LokiMessage {
+/// encode the LOKI message into a stream
+pub fn encode(_msg_name: String, _content: Map<String, Value>) -> Vec<u8> {
     todo!();
 }
 
-/// wrap the user defined message type into LokiMessage
-pub fn wrap() {
+/// decode a stream to a LOKI message
+pub fn decode(_msg_name: String, _stream: &[u8]) -> Map<String, Value> {
     todo!();
 }
 
@@ -19,11 +20,3 @@ pub fn send_packets(_target_id: String, _msg: LokiMessage) {
 
 /// receive the packets
 pub fn recv_packets() {}
-
-/// init the fuzzer
-pub fn init_fuzz() {}
-
-/// the interface for signing
-pub fn sign() {
-    todo!();
-}
