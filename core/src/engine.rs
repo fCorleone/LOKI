@@ -437,15 +437,16 @@ impl Engine {
     }
 
     /// init the fuzz engine, the main controller of the LOKI
-    /// First, the engine resisters the callback functions
-    /// Then, the engine inits the scepter parser
+    /// First, the engine resisters the global variables
+    /// Then, the engine inits the DSL parser
     /// After that, the engine constructs the state model
-    /// Then, the engine start the active sending thread and start fuzz
+    /// Then, constructs the engine and starts the fuzz
     pub fn start_fuzz_engine() -> Self {
         // set the global variables
         // === HERE TO MODIFY ===
         crate::loki_type::set_timestamp_length(16);
         crate::loki_type::set_current_language("Cpp".to_string());
+        crate::loki_type::set_current_private_key("private.key".to_string());
         // === === === === == ===
         println!(
             "LOKI has startted!!! Current blockchain's language is {:?}.",

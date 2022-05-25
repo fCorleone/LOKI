@@ -19,6 +19,10 @@ pub static mut TIMESTAMP_LENGTH: usize = 16;
 lazy_static! {
     pub static ref CURRENT_LANGUAGE: Mutex<String> = Mutex::new(String::from("CPP"));
 }
+
+lazy_static! {
+    pub static ref PRIVATE_KEY_FILE: Mutex<String> = Mutex::new(String::from("privatekey.key"));
+}
 /// construct basic types according to the string
 impl FromStr for BasicType {
     type Err = String;
@@ -52,6 +56,18 @@ pub fn set_current_language(language: String) {
 /// get the current language
 pub fn get_current_language() -> String {
     let res = CURRENT_LANGUAGE.lock().unwrap();
+    (*res).to_string()
+}
+
+/// set the current private key path
+pub fn set_current_private_key(file: String) {
+    let mut l = PRIVATE_KEY_FILE.lock().unwrap();
+    *l = file;
+}
+
+/// get the current private key path
+pub fn get_current_private_key() -> String {
+    let res = PRIVATE_KEY_FILE.lock().unwrap();
     (*res).to_string()
 }
 

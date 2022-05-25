@@ -122,6 +122,12 @@ impl LokiMessage {
         for structure_attr in current_structure.get_attrs() {
             let attr_type = structure_attr.get_attr_type();
             let attr_mutation = structure_attr.get_attr_mutator();
+            // let mut match_type = &attr_type[..];
+            // if match_type == "Oneof"{
+            //     // It's actual type
+
+            //     match_type = ;
+            // }
             match &attr_type[..] {
                 "Number" => {
                     let cur_val = self
@@ -247,8 +253,31 @@ impl LokiMessage {
                 }
                 "Hash" => {
                     // first get the parameters of the hash function
-
-                    todo!()
+                    let hash_algo = structure_attr.get_attr_algo();
+                    let hash_para = structure_attr.get_attr_param();
+                    let encode_data = self
+                        .get_mut_content()
+                        .get(&hash_para)
+                        .unwrap()
+                        .as_object()
+                        .unwrap();
+                    // get the struct name of the parameter
+                    let para_struct_name = current_structure
+                        .get_attrs()
+                        .into_iter()
+                        .filter(|v| v.get_attr_name() == hash_para)
+                        .collect::<Vec<_>>()[0]
+                        .get_attr_reff();
+                    let encoded_data = LokiMessage::new(
+                        "LOKI".to_string(),
+                        get_structure_from_msg_type(para_struct_name).unwrap(),
+                        encode_data.clone(),
+                    );
+                    // !!! FATAL: for now, only calculate the hash of a struct's encoded data
+                    let data = encoded_data.encode().unwrap();
+                    let mutated_hash = get_hash(hash_algo, data);
+                    self.get_mut_content()[&structure_attr.get_attr_name()] =
+                        Value::String(String::from(mutated_hash));
                 }
                 "BigNumber" => {
                     let cur_val = self
@@ -384,7 +413,25 @@ impl LokiMessage {
                     self.get_mut_content()[&structure_attr.get_attr_name()] = mutated_arr;
                 }
                 "Signature" => {
-                    todo!()
+                    let sign_algo = structure_attr.get_attr_algo();
+                    let sign_para = structure_attr.get_attr_param();
+                    let encode_data = self
+                        .get_mut_content()
+                        .get(&sign_para)
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .clone()
+                        .iter()
+                        .map(|v| (v.as_u64().unwrap() as u8))
+                        .collect::<Vec<_>>();
+                    // !!! FATAL: for now, only calculate the signature of a bytes field
+                    let res = get_signature(sign_algo, encode_data);
+                    self.get_mut_content()[&structure_attr.get_attr_name()] = Value::Array(
+                        res.iter()
+                            .map(|v| Value::Number(Number::from(*v as u64)))
+                            .collect::<Vec<_>>(),
+                    );
                 }
                 "Struct" => {
                     let cur_val = self
@@ -470,7 +517,29 @@ impl LokiMessage {
                         );
                     }
                     "Hash" => {
-                        todo!()
+                        // first get the parameters of the hash function
+                        let hash_algo = structure_attr.get_attr_algo();
+                        let hash_para = structure_attr.get_attr_param();
+                        let encode_data = new_content.get(&hash_para).unwrap().as_object().unwrap();
+                        // get the struct name of the parameter
+                        let para_struct_name = structure
+                            .get_attrs()
+                            .into_iter()
+                            .filter(|v| v.get_attr_name() == hash_para)
+                            .collect::<Vec<_>>()[0]
+                            .get_attr_reff();
+                        let encoded_data = LokiMessage::new(
+                            "LOKI".to_string(),
+                            get_structure_from_msg_type(para_struct_name).unwrap(),
+                            encode_data.clone(),
+                        );
+                        // !!! FATAL: for now, only calculate the hash of a struct's encoded data
+                        let data = encoded_data.encode().unwrap();
+                        let mutated_hash = get_hash(hash_algo, data);
+                        new_content.insert(
+                            structure_attr.get_attr_name(),
+                            Value::String(String::from(mutated_hash)),
+                        );
                     }
                     "BigNumber" => {
                         let ele_len = match structure_attr.get_attr_size().parse::<u32>() {
@@ -540,7 +609,27 @@ impl LokiMessage {
                         new_content.insert(structure_attr.get_attr_name(), generated_arr);
                     }
                     "Signature" => {
-                        todo!()
+                        let sign_algo = structure_attr.get_attr_algo();
+                        let sign_para = structure_attr.get_attr_param();
+                        // !!! FATAL: for now, only calculate the signature of a bytes field
+                        let encode_data = new_content
+                            .get(&sign_para)
+                            .unwrap()
+                            .as_array()
+                            .unwrap()
+                            .clone()
+                            .iter()
+                            .map(|v| (v.as_u64().unwrap() as u8))
+                            .collect::<Vec<_>>();
+                        let res = get_signature(sign_algo, encode_data);
+                        new_content.insert(
+                            structure_attr.get_attr_name(),
+                            Value::Array(
+                                res.iter()
+                                    .map(|v| Value::Number(Number::from(*v as u64)))
+                                    .collect::<Vec<_>>(),
+                            ),
+                        );
                     }
                     "Struct" => {
                         let refer_message = structure_attr.get_attr_reff();
@@ -630,4 +719,43 @@ pub fn generate_loki_message_by_type(msg_type: String) -> LokiMessage {
     let structure =
         get_structure_from_msg_type(msg_type).expect("cannot find the message in the spec visitor");
     LokiMessage::new("".to_string(), structure, Map::new())
+}
+
+/// get the hash with certain algorithm for some parameters
+pub fn get_hash(algo: String, data: Vec<u8>) -> String {
+    match &algo[..] {
+        "keccak256" => {
+            return crate::hash_functions::keccak256(data);
+        }
+        "sha3_256" => {
+            return crate::hash_functions::sha3_256(data);
+        }
+        "sm3" => {
+            return crate::hash_functions::sm3(data);
+        }
+        _ => {
+            panic!("Do not support the hash function named {:?}", algo);
+        }
+    }
+}
+
+/// get the signature with certain algorithm for some parameters
+pub fn get_signature(algo: String, data: Vec<u8>) -> Vec<u8> {
+    match &algo[..] {
+        "secp256k1" => {
+            let private_key = crate::signature_functions::get_private_key_secp256k1(
+                &crate::loki_type::get_current_private_key()[..],
+            );
+            return crate::signature_functions::sign_secp256k1(private_key, data);
+        }
+        // "" => {
+        //     return crate::hash_functions::sha3_256(data);
+        // }
+        // "" => {
+        //     return crate::hash_functions::sm3(data);
+        // }
+        _ => {
+            panic!("Do not support the signature function named {:?}", algo);
+        }
+    }
 }

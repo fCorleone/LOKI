@@ -20,8 +20,9 @@ pub fn get_public_key_secp256k1(public_key_file: &str) -> XOnlyPublicKey {
 /// This function returns a signature object, the user can change it to :
 /// 1) bytes: serialize_compact(&self) -> [u8; 64]
 /// 2) DER format signature: serialize_der(&self) -> SerializedSignature
-pub fn sign_secp256k1(private_key: SecretKey, msg: Vec<u8>) -> secp256k1::ecdsa::Signature {
+pub fn sign_secp256k1(private_key: SecretKey, msg: Vec<u8>) -> Vec<u8> {
     let data = secp256k1::Message::from_slice(&msg).unwrap();
     let ctx = Secp256k1::new();
-    ctx.sign_ecdsa(&data, &private_key)
+    let res = ctx.sign_ecdsa(&data, &private_key);
+    return res.serialize_compact().to_vec();
 }
