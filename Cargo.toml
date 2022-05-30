@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "core",
-    "loki_spec"
+    "loki_spec",
+    "loki_proto"
 ]
