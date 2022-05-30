@@ -18,6 +18,8 @@ hex = "0.4.3"
 integer-encoding = "3.0.3"
 secp256k1 = "0.22.1"
 antlr-rust = "0.2.2"
+protobuf = "3.0.2"
+protobuf-json-mapping = "3.0.0"
 
 [build-dependencies]
 protoc-rust = "2.0"

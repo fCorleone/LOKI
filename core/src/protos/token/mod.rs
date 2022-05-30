@@ -1,3 +1,3 @@
-pub mod transaction;
-pub mod prover;
 pub mod expectations;
+pub mod prover;
+pub mod transaction;

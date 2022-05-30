@@ -4,13 +4,15 @@ use serde_json::{Map, Value};
 
 /// the adatption interface
 /// encode the LOKI message into a stream
-pub fn encode(_msg_name: String, _content: Map<String, Value>) -> Vec<u8> {
-    todo!();
+pub fn encode(msg_name: String, content: Map<String, Value>) -> Vec<u8> {
+    let msg = crate::loki_message::get_structure_from_msg_type(msg_name).unwrap();
+    return crate::encode_map_to_buffer::encode(msg, content);
 }
 
 /// decode a stream to a LOKI message
-pub fn decode(_msg_name: String, _stream: &[u8]) -> Map<String, Value> {
-    todo!();
+pub fn decode(msg_name: String, stream: &[u8]) -> Map<String, Value> {
+    let msg = crate::loki_message::get_structure_from_msg_type(msg_name).unwrap();
+    return crate::decode_map_to_buffer::decode(msg, stream);
 }
 
 /// the package sending interface of tested systems
