@@ -9,3 +9,5 @@ edition = "2021"
 anyhow = "1.0"
 lazy_static = "1.4"
 antlr-rust = "0.2.2"
+loki_proto = {path = "../loki_proto"}
+walkdir = "2"

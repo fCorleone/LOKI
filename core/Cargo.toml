@@ -18,3 +18,11 @@ hex = "0.4.3"
 integer-encoding = "3.0.3"
 secp256k1 = "0.22.1"
 antlr-rust = "0.2.2"
+
+[build-dependencies]
+protoc-rust = "2.0"
+walkdir = "2"
+loki_proto = {path = "../loki_proto"}
+loki_spec = {path = "../loki_spec"}
+protobuf-codegen = "3.0.2"
+protobuf = "3.0.2"

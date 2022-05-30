@@ -1,11 +1,10 @@
 // use anyhow::{anyhow, Result};
-use anyhow::{ Result};
-
+use anyhow::Result;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ProtoEnum {
     name: String,
-    attrs: Vec<ProtoAttribute>
+    attrs: Vec<ProtoAttribute>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -16,16 +15,12 @@ pub struct ProtoMessage {
     same_name: bool,
 }
 
-
 //==========================      PtotoEnum      ==========================/
 #[allow(dead_code)]
 impl ProtoEnum {
     /// construct a new ProtoMessage with content
     pub fn new(name: String, attrs: Vec<ProtoAttribute>) -> Self {
-        Self {
-            name,
-            attrs,
-        }
+        Self { name, attrs }
     }
 
     pub fn get_name(&self) -> String {
@@ -81,11 +76,6 @@ pub fn construct_protoenum() -> ProtoEnum {
 
     return msg;
 }
-
-
-
-
-
 
 //==========================      ProtoMessage ==========================/
 #[allow(dead_code)]
@@ -172,36 +162,30 @@ pub fn construct_protomessage() -> ProtoMessage {
     return msg;
 }
 
-
-
-
-
-
-
 //==========================      ProtoAttribute    ==========================/
 /**
- * Type: (   'double'
-        |   'float'
-        |   'int32'
-        |   'int64'
-        |   'uint32'
-        |   'uint64'
-        |   'sint32'
-        |   'sint64'
-        |   'fixed32'
-        |   'fixed64'
-        |   'sfixed32'
-        |   'sfixed64'
-        |   'bool'
-        |   'string'
-        |   'bytes'
-        |   'message' => Struct.Struct
-        |   'enum' => Struct.Struct
-        |   'repeated' => array
-        |   'oneof' : list options, <option:type name>, <option>, <>, ... <> =>Oneof
-        |   ‘map’:  => Map
-        )
- */
+* Type: (   'double'
+       |   'float'
+       |   'int32'
+       |   'int64'
+       |   'uint32'
+       |   'uint64'
+       |   'sint32'
+       |   'sint64'
+       |   'fixed32'
+       |   'fixed64'
+       |   'sfixed32'
+       |   'sfixed64'
+       |   'bool'
+       |   'string'
+       |   'bytes'
+       |   'message' => Struct.Struct
+       |   'enum' => Struct.Struct
+       |   'repeated' => array
+       |   'oneof' : list options, <option:type name>, <option>, <>, ... <> =>Oneof
+       |   ‘map’:  => Map
+       )
+*/
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ProtoAttribute {
     attr_type: String,
@@ -260,7 +244,7 @@ impl ProtoAttribute {
         true
     }
 
-    pub fn get_attr_ele_type(&self) -> String{
+    pub fn get_attr_ele_type(&self) -> String {
         self.attr_ele_type.clone()
     }
 
@@ -324,7 +308,6 @@ impl ProtoAttribute {
     }
 }
 
-
 #[allow(dead_code)]
 pub fn copy_proto_attribute(attr: &ProtoAttribute) -> ProtoAttribute {
     let mut ret = construct_proto_attribute();
@@ -347,17 +330,12 @@ pub fn construct_proto_attribute() -> ProtoAttribute {
     return attr;
 }
 
-
-
-
-
 // //==========================      OneOf ==========================/
 // #[derive(Default, Debug, Clone, PartialEq, Eq)]
 // pub struct OneOf {
 //     name: String,
 //     attrs: Vec<ProtoAttribute>
 // }
-
 
 // #[allow(dead_code)]
 // impl OneOf {
@@ -401,7 +379,6 @@ pub fn construct_proto_attribute() -> ProtoAttribute {
 //     }
 // }
 
-
 // pub fn copy_oneof(msg: &OneOf) -> OneOf {
 //     let mut ret = OneOf::default();
 //     ret.name = msg.name.clone();
@@ -422,5 +399,3 @@ pub fn construct_proto_attribute() -> ProtoAttribute {
 
 //     return msg;
 // }
-
-

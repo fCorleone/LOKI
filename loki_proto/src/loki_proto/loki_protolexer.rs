@@ -4,169 +4,317 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 use antlr_rust::atn::ATN;
+use antlr_rust::atn_deserializer::ATNDeserializer;
 use antlr_rust::char_stream::CharStream;
+use antlr_rust::dfa::DFA;
+use antlr_rust::error_listener::ErrorListener;
 use antlr_rust::int_stream::IntStream;
 use antlr_rust::lexer::{BaseLexer, Lexer, LexerRecog};
-use antlr_rust::atn_deserializer::ATNDeserializer;
-use antlr_rust::dfa::DFA;
-use antlr_rust::lexer_atn_simulator::{LexerATNSimulator, ILexerATNSimulator};
-use antlr_rust::PredictionContextCache;
-use antlr_rust::recognizer::{Recognizer,Actions};
-use antlr_rust::error_listener::ErrorListener;
-use antlr_rust::TokenSource;
-use antlr_rust::token_factory::{TokenFactory,CommonTokenFactory,TokenAware};
+use antlr_rust::lexer_atn_simulator::{ILexerATNSimulator, LexerATNSimulator};
+use antlr_rust::parser_rule_context::{cast, BaseParserRuleContext, ParserRuleContext};
+use antlr_rust::recognizer::{Actions, Recognizer};
+use antlr_rust::rule_context::{BaseRuleContext, EmptyContext, EmptyCustomRuleContext};
 use antlr_rust::token::*;
-use antlr_rust::rule_context::{BaseRuleContext,EmptyCustomRuleContext,EmptyContext};
-use antlr_rust::parser_rule_context::{ParserRuleContext,BaseParserRuleContext,cast};
-use antlr_rust::vocabulary::{Vocabulary,VocabularyImpl};
+use antlr_rust::token_factory::{CommonTokenFactory, TokenAware, TokenFactory};
+use antlr_rust::vocabulary::{Vocabulary, VocabularyImpl};
+use antlr_rust::PredictionContextCache;
+use antlr_rust::TokenSource;
 
-use antlr_rust::{lazy_static,Tid,TidAble,TidExt};
+use antlr_rust::{lazy_static, Tid, TidAble, TidExt};
 
-use std::sync::Arc;
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
+use std::sync::Arc;
 
+pub const BOOL: isize = 1;
+pub const BYTES: isize = 2;
+pub const DOUBLE: isize = 3;
+pub const ENUM: isize = 4;
+pub const FIXED32: isize = 5;
+pub const FIXED64: isize = 6;
+pub const FLOAT: isize = 7;
+pub const IMPORT: isize = 8;
+pub const INT32: isize = 9;
+pub const INT64: isize = 10;
+pub const MAP: isize = 11;
+pub const MESSAGE: isize = 12;
+pub const ONEOF: isize = 13;
+pub const OPTION: isize = 14;
+pub const PACKAGE: isize = 15;
+pub const PROTO3_DOUBLE: isize = 16;
+pub const PROTO3_SINGLE: isize = 17;
+pub const PUBLIC: isize = 18;
+pub const REPEATED: isize = 19;
+pub const RESERVED: isize = 20;
+pub const RETURNS: isize = 21;
+pub const RPC: isize = 22;
+pub const SERVICE: isize = 23;
+pub const SFIXED32: isize = 24;
+pub const SFIXED64: isize = 25;
+pub const SINT32: isize = 26;
+pub const SINT64: isize = 27;
+pub const STREAM: isize = 28;
+pub const STRING: isize = 29;
+pub const SYNTAX: isize = 30;
+pub const TO: isize = 31;
+pub const UINT32: isize = 32;
+pub const UINT64: isize = 33;
+pub const WEAK: isize = 34;
+pub const Ident: isize = 35;
+pub const IntLit: isize = 36;
+pub const FloatLit: isize = 37;
+pub const BoolLit: isize = 38;
+pub const StrLit: isize = 39;
+pub const Quote: isize = 40;
+pub const LPAREN: isize = 41;
+pub const RPAREN: isize = 42;
+pub const LBRACE: isize = 43;
+pub const RBRACE: isize = 44;
+pub const LBRACK: isize = 45;
+pub const RBRACK: isize = 46;
+pub const LCHEVR: isize = 47;
+pub const RCHEVR: isize = 48;
+pub const SEMI: isize = 49;
+pub const COMMA: isize = 50;
+pub const DOT: isize = 51;
+pub const MINUS: isize = 52;
+pub const PLUS: isize = 53;
+pub const ASSIGN: isize = 54;
+pub const WS: isize = 55;
+pub const COMMENT: isize = 56;
+pub const LINE_COMMENT: isize = 57;
+pub const channelNames: [&'static str; 0 + 2] = ["DEFAULT_TOKEN_CHANNEL", "HIDDEN"];
 
-	pub const BOOL:isize=1; 
-	pub const BYTES:isize=2; 
-	pub const DOUBLE:isize=3; 
-	pub const ENUM:isize=4; 
-	pub const FIXED32:isize=5; 
-	pub const FIXED64:isize=6; 
-	pub const FLOAT:isize=7; 
-	pub const IMPORT:isize=8; 
-	pub const INT32:isize=9; 
-	pub const INT64:isize=10; 
-	pub const MAP:isize=11; 
-	pub const MESSAGE:isize=12; 
-	pub const ONEOF:isize=13; 
-	pub const OPTION:isize=14; 
-	pub const PACKAGE:isize=15; 
-	pub const PROTO3_DOUBLE:isize=16; 
-	pub const PROTO3_SINGLE:isize=17; 
-	pub const PUBLIC:isize=18; 
-	pub const REPEATED:isize=19; 
-	pub const RESERVED:isize=20; 
-	pub const RETURNS:isize=21; 
-	pub const RPC:isize=22; 
-	pub const SERVICE:isize=23; 
-	pub const SFIXED32:isize=24; 
-	pub const SFIXED64:isize=25; 
-	pub const SINT32:isize=26; 
-	pub const SINT64:isize=27; 
-	pub const STREAM:isize=28; 
-	pub const STRING:isize=29; 
-	pub const SYNTAX:isize=30; 
-	pub const TO:isize=31; 
-	pub const UINT32:isize=32; 
-	pub const UINT64:isize=33; 
-	pub const WEAK:isize=34; 
-	pub const Ident:isize=35; 
-	pub const IntLit:isize=36; 
-	pub const FloatLit:isize=37; 
-	pub const BoolLit:isize=38; 
-	pub const StrLit:isize=39; 
-	pub const Quote:isize=40; 
-	pub const LPAREN:isize=41; 
-	pub const RPAREN:isize=42; 
-	pub const LBRACE:isize=43; 
-	pub const RBRACE:isize=44; 
-	pub const LBRACK:isize=45; 
-	pub const RBRACK:isize=46; 
-	pub const LCHEVR:isize=47; 
-	pub const RCHEVR:isize=48; 
-	pub const SEMI:isize=49; 
-	pub const COMMA:isize=50; 
-	pub const DOT:isize=51; 
-	pub const MINUS:isize=52; 
-	pub const PLUS:isize=53; 
-	pub const ASSIGN:isize=54; 
-	pub const WS:isize=55; 
-	pub const COMMENT:isize=56; 
-	pub const LINE_COMMENT:isize=57;
-	pub const channelNames: [&'static str;0+2] = [
-		"DEFAULT_TOKEN_CHANNEL", "HIDDEN"
-	];
+pub const modeNames: [&'static str; 1] = ["DEFAULT_MODE"];
 
-	pub const modeNames: [&'static str;1] = [
-		"DEFAULT_MODE"
-	];
+pub const ruleNames: [&'static str; 70] = [
+    "BOOL",
+    "BYTES",
+    "DOUBLE",
+    "ENUM",
+    "FIXED32",
+    "FIXED64",
+    "FLOAT",
+    "IMPORT",
+    "INT32",
+    "INT64",
+    "MAP",
+    "MESSAGE",
+    "ONEOF",
+    "OPTION",
+    "PACKAGE",
+    "PROTO3_DOUBLE",
+    "PROTO3_SINGLE",
+    "PUBLIC",
+    "REPEATED",
+    "RESERVED",
+    "RETURNS",
+    "RPC",
+    "SERVICE",
+    "SFIXED32",
+    "SFIXED64",
+    "SINT32",
+    "SINT64",
+    "STREAM",
+    "STRING",
+    "SYNTAX",
+    "TO",
+    "UINT32",
+    "UINT64",
+    "WEAK",
+    "Letter",
+    "DecimalDigit",
+    "OctalDigit",
+    "HexDigit",
+    "Ident",
+    "IntLit",
+    "DecimalLit",
+    "OctalLit",
+    "HexLit",
+    "FloatLit",
+    "Decimals",
+    "Exponent",
+    "BoolLit",
+    "StrLit",
+    "CharValue",
+    "HexEscape",
+    "OctEscape",
+    "CharEscape",
+    "Quote",
+    "LPAREN",
+    "RPAREN",
+    "LBRACE",
+    "RBRACE",
+    "LBRACK",
+    "RBRACK",
+    "LCHEVR",
+    "RCHEVR",
+    "SEMI",
+    "COMMA",
+    "DOT",
+    "MINUS",
+    "PLUS",
+    "ASSIGN",
+    "WS",
+    "COMMENT",
+    "LINE_COMMENT",
+];
 
-	pub const ruleNames: [&'static str;70] = [
-		"BOOL", "BYTES", "DOUBLE", "ENUM", "FIXED32", "FIXED64", "FLOAT", "IMPORT", 
-		"INT32", "INT64", "MAP", "MESSAGE", "ONEOF", "OPTION", "PACKAGE", "PROTO3_DOUBLE", 
-		"PROTO3_SINGLE", "PUBLIC", "REPEATED", "RESERVED", "RETURNS", "RPC", "SERVICE", 
-		"SFIXED32", "SFIXED64", "SINT32", "SINT64", "STREAM", "STRING", "SYNTAX", 
-		"TO", "UINT32", "UINT64", "WEAK", "Letter", "DecimalDigit", "OctalDigit", 
-		"HexDigit", "Ident", "IntLit", "DecimalLit", "OctalLit", "HexLit", "FloatLit", 
-		"Decimals", "Exponent", "BoolLit", "StrLit", "CharValue", "HexEscape", 
-		"OctEscape", "CharEscape", "Quote", "LPAREN", "RPAREN", "LBRACE", "RBRACE", 
-		"LBRACK", "RBRACK", "LCHEVR", "RCHEVR", "SEMI", "COMMA", "DOT", "MINUS", 
-		"PLUS", "ASSIGN", "WS", "COMMENT", "LINE_COMMENT"
-	];
+pub const _LITERAL_NAMES: [Option<&'static str>; 55] = [
+    None,
+    Some("'bool'"),
+    Some("'bytes'"),
+    Some("'double'"),
+    Some("'enum'"),
+    Some("'fixed32'"),
+    Some("'fixed64'"),
+    Some("'float'"),
+    Some("'import'"),
+    Some("'int32'"),
+    Some("'int64'"),
+    Some("'map'"),
+    Some("'message'"),
+    Some("'oneof'"),
+    Some("'option'"),
+    Some("'package'"),
+    Some("'\"proto3\"'"),
+    Some("''proto3''"),
+    Some("'public'"),
+    Some("'repeated'"),
+    Some("'reserved'"),
+    Some("'returns'"),
+    Some("'rpc'"),
+    Some("'service'"),
+    Some("'sfixed32'"),
+    Some("'sfixed64'"),
+    Some("'sint32'"),
+    Some("'sint64'"),
+    Some("'stream'"),
+    Some("'string'"),
+    Some("'syntax'"),
+    Some("'to'"),
+    Some("'uint32'"),
+    Some("'uint64'"),
+    Some("'weak'"),
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    Some("'('"),
+    Some("')'"),
+    Some("'{'"),
+    Some("'}'"),
+    Some("'['"),
+    Some("']'"),
+    Some("'<'"),
+    Some("'>'"),
+    Some("';'"),
+    Some("','"),
+    Some("'.'"),
+    Some("'-'"),
+    Some("'+'"),
+    Some("'='"),
+];
+pub const _SYMBOLIC_NAMES: [Option<&'static str>; 58] = [
+    None,
+    Some("BOOL"),
+    Some("BYTES"),
+    Some("DOUBLE"),
+    Some("ENUM"),
+    Some("FIXED32"),
+    Some("FIXED64"),
+    Some("FLOAT"),
+    Some("IMPORT"),
+    Some("INT32"),
+    Some("INT64"),
+    Some("MAP"),
+    Some("MESSAGE"),
+    Some("ONEOF"),
+    Some("OPTION"),
+    Some("PACKAGE"),
+    Some("PROTO3_DOUBLE"),
+    Some("PROTO3_SINGLE"),
+    Some("PUBLIC"),
+    Some("REPEATED"),
+    Some("RESERVED"),
+    Some("RETURNS"),
+    Some("RPC"),
+    Some("SERVICE"),
+    Some("SFIXED32"),
+    Some("SFIXED64"),
+    Some("SINT32"),
+    Some("SINT64"),
+    Some("STREAM"),
+    Some("STRING"),
+    Some("SYNTAX"),
+    Some("TO"),
+    Some("UINT32"),
+    Some("UINT64"),
+    Some("WEAK"),
+    Some("Ident"),
+    Some("IntLit"),
+    Some("FloatLit"),
+    Some("BoolLit"),
+    Some("StrLit"),
+    Some("Quote"),
+    Some("LPAREN"),
+    Some("RPAREN"),
+    Some("LBRACE"),
+    Some("RBRACE"),
+    Some("LBRACK"),
+    Some("RBRACK"),
+    Some("LCHEVR"),
+    Some("RCHEVR"),
+    Some("SEMI"),
+    Some("COMMA"),
+    Some("DOT"),
+    Some("MINUS"),
+    Some("PLUS"),
+    Some("ASSIGN"),
+    Some("WS"),
+    Some("COMMENT"),
+    Some("LINE_COMMENT"),
+];
+lazy_static! {
+    static ref _shared_context_cache: Arc<PredictionContextCache> =
+        Arc::new(PredictionContextCache::new());
+    static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(
+        _LITERAL_NAMES.iter(),
+        _SYMBOLIC_NAMES.iter(),
+        None
+    ));
+}
 
-
-	pub const _LITERAL_NAMES: [Option<&'static str>;55] = [
-		None, Some("'bool'"), Some("'bytes'"), Some("'double'"), Some("'enum'"), 
-		Some("'fixed32'"), Some("'fixed64'"), Some("'float'"), Some("'import'"), 
-		Some("'int32'"), Some("'int64'"), Some("'map'"), Some("'message'"), Some("'oneof'"), 
-		Some("'option'"), Some("'package'"), Some("'\"proto3\"'"), Some("''proto3''"), 
-		Some("'public'"), Some("'repeated'"), Some("'reserved'"), Some("'returns'"), 
-		Some("'rpc'"), Some("'service'"), Some("'sfixed32'"), Some("'sfixed64'"), 
-		Some("'sint32'"), Some("'sint64'"), Some("'stream'"), Some("'string'"), 
-		Some("'syntax'"), Some("'to'"), Some("'uint32'"), Some("'uint64'"), Some("'weak'"), 
-		None, None, None, None, None, None, Some("'('"), Some("')'"), Some("'{'"), 
-		Some("'}'"), Some("'['"), Some("']'"), Some("'<'"), Some("'>'"), Some("';'"), 
-		Some("','"), Some("'.'"), Some("'-'"), Some("'+'"), Some("'='")
-	];
-	pub const _SYMBOLIC_NAMES: [Option<&'static str>;58]  = [
-		None, Some("BOOL"), Some("BYTES"), Some("DOUBLE"), Some("ENUM"), Some("FIXED32"), 
-		Some("FIXED64"), Some("FLOAT"), Some("IMPORT"), Some("INT32"), Some("INT64"), 
-		Some("MAP"), Some("MESSAGE"), Some("ONEOF"), Some("OPTION"), Some("PACKAGE"), 
-		Some("PROTO3_DOUBLE"), Some("PROTO3_SINGLE"), Some("PUBLIC"), Some("REPEATED"), 
-		Some("RESERVED"), Some("RETURNS"), Some("RPC"), Some("SERVICE"), Some("SFIXED32"), 
-		Some("SFIXED64"), Some("SINT32"), Some("SINT64"), Some("STREAM"), Some("STRING"), 
-		Some("SYNTAX"), Some("TO"), Some("UINT32"), Some("UINT64"), Some("WEAK"), 
-		Some("Ident"), Some("IntLit"), Some("FloatLit"), Some("BoolLit"), Some("StrLit"), 
-		Some("Quote"), Some("LPAREN"), Some("RPAREN"), Some("LBRACE"), Some("RBRACE"), 
-		Some("LBRACK"), Some("RBRACK"), Some("LCHEVR"), Some("RCHEVR"), Some("SEMI"), 
-		Some("COMMA"), Some("DOT"), Some("MINUS"), Some("PLUS"), Some("ASSIGN"), 
-		Some("WS"), Some("COMMENT"), Some("LINE_COMMENT")
-	];
-	lazy_static!{
-	    static ref _shared_context_cache: Arc<PredictionContextCache> = Arc::new(PredictionContextCache::new());
-		static ref VOCABULARY: Box<dyn Vocabulary> = Box::new(VocabularyImpl::new(_LITERAL_NAMES.iter(), _SYMBOLIC_NAMES.iter(), None));
-	}
-
-
-pub type LexerContext<'input> = BaseRuleContext<'input,EmptyCustomRuleContext<'input,LocalTokenFactory<'input> >>;
+pub type LexerContext<'input> =
+    BaseRuleContext<'input, EmptyCustomRuleContext<'input, LocalTokenFactory<'input>>>;
 pub type LocalTokenFactory<'input> = CommonTokenFactory;
 
-type From<'a> = <LocalTokenFactory<'a> as TokenFactory<'a> >::From;
+type From<'a> = <LocalTokenFactory<'a> as TokenFactory<'a>>::From;
 
 #[derive(Tid)]
-pub struct Loki_protoLexer<'input, Input:CharStream<From<'input> >> {
-	base: BaseLexer<'input,Loki_protoLexerActions,Input,LocalTokenFactory<'input>>,
+pub struct Loki_protoLexer<'input, Input: CharStream<From<'input>>> {
+    base: BaseLexer<'input, Loki_protoLexerActions, Input, LocalTokenFactory<'input>>,
 }
 
-impl<'input, Input:CharStream<From<'input> >> Deref for Loki_protoLexer<'input,Input>{
-	type Target = BaseLexer<'input,Loki_protoLexerActions,Input,LocalTokenFactory<'input>>;
+impl<'input, Input: CharStream<From<'input>>> Deref for Loki_protoLexer<'input, Input> {
+    type Target = BaseLexer<'input, Loki_protoLexerActions, Input, LocalTokenFactory<'input>>;
 
-	fn deref(&self) -> &Self::Target {
-		&self.base
-	}
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
 }
 
-impl<'input, Input:CharStream<From<'input> >> DerefMut for Loki_protoLexer<'input,Input>{
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.base
-	}
+impl<'input, Input: CharStream<From<'input>>> DerefMut for Loki_protoLexer<'input, Input> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.base
+    }
 }
 
-
-impl<'input, Input:CharStream<From<'input> >> Loki_protoLexer<'input,Input>{
+impl<'input, Input: CharStream<From<'input>>> Loki_protoLexer<'input, Input> {
     fn get_rule_names(&self) -> &'static [&'static str] {
         &ruleNames
     }
@@ -182,50 +330,60 @@ impl<'input, Input:CharStream<From<'input> >> Loki_protoLexer<'input,Input>{
         "Loki_protoLexer.g4"
     }
 
-	pub fn new_with_token_factory(input: Input, tf: &'input LocalTokenFactory<'input>) -> Self {
-		antlr_rust::recognizer::check_version("0","2");
-    	Self {
-			base: BaseLexer::new_base_lexer(
-				input,
-				LexerATNSimulator::new_lexer_atnsimulator(
-					_ATN.clone(),
-					_decision_to_DFA.clone(),
-					_shared_context_cache.clone(),
-				),
-				Loki_protoLexerActions{},
-				tf
-			)
-	    }
-	}
+    pub fn new_with_token_factory(input: Input, tf: &'input LocalTokenFactory<'input>) -> Self {
+        antlr_rust::recognizer::check_version("0", "2");
+        Self {
+            base: BaseLexer::new_base_lexer(
+                input,
+                LexerATNSimulator::new_lexer_atnsimulator(
+                    _ATN.clone(),
+                    _decision_to_DFA.clone(),
+                    _shared_context_cache.clone(),
+                ),
+                Loki_protoLexerActions {},
+                tf,
+            ),
+        }
+    }
 }
 
-impl<'input, Input:CharStream<From<'input> >> Loki_protoLexer<'input,Input> where &'input LocalTokenFactory<'input>:Default{
-	pub fn new(input: Input) -> Self{
-		Loki_protoLexer::new_with_token_factory(input, <&LocalTokenFactory<'input> as Default>::default())
-	}
+impl<'input, Input: CharStream<From<'input>>> Loki_protoLexer<'input, Input>
+where
+    &'input LocalTokenFactory<'input>: Default,
+{
+    pub fn new(input: Input) -> Self {
+        Loki_protoLexer::new_with_token_factory(
+            input,
+            <&LocalTokenFactory<'input> as Default>::default(),
+        )
+    }
 }
 
-pub struct Loki_protoLexerActions {
+pub struct Loki_protoLexerActions {}
+
+impl Loki_protoLexerActions {}
+
+impl<'input, Input: CharStream<From<'input>>>
+    Actions<'input, BaseLexer<'input, Loki_protoLexerActions, Input, LocalTokenFactory<'input>>>
+    for Loki_protoLexerActions
+{
 }
 
-impl Loki_protoLexerActions{
+impl<'input, Input: CharStream<From<'input>>> Loki_protoLexer<'input, Input> {}
+
+impl<'input, Input: CharStream<From<'input>>>
+    LexerRecog<'input, BaseLexer<'input, Loki_protoLexerActions, Input, LocalTokenFactory<'input>>>
+    for Loki_protoLexerActions
+{
+}
+impl<'input> TokenAware<'input> for Loki_protoLexerActions {
+    type TF = LocalTokenFactory<'input>;
 }
 
-impl<'input, Input:CharStream<From<'input> >> Actions<'input,BaseLexer<'input,Loki_protoLexerActions,Input,LocalTokenFactory<'input>>> for Loki_protoLexerActions{
-	}
-
-	impl<'input, Input:CharStream<From<'input> >> Loki_protoLexer<'input,Input>{
-
-}
-
-impl<'input, Input:CharStream<From<'input> >> LexerRecog<'input,BaseLexer<'input,Loki_protoLexerActions,Input,LocalTokenFactory<'input>>> for Loki_protoLexerActions{
-}
-impl<'input> TokenAware<'input> for Loki_protoLexerActions{
-	type TF = LocalTokenFactory<'input>;
-}
-
-impl<'input, Input:CharStream<From<'input> >> TokenSource<'input> for Loki_protoLexer<'input,Input>{
-	type TF = LocalTokenFactory<'input>;
+impl<'input, Input: CharStream<From<'input>>> TokenSource<'input>
+    for Loki_protoLexer<'input, Input>
+{
+    type TF = LocalTokenFactory<'input>;
 
     fn next_token(&mut self) -> <Self::TF as TokenFactory<'input>>::Tok {
         self.base.next_token()
@@ -243,38 +401,30 @@ impl<'input, Input:CharStream<From<'input> >> TokenSource<'input> for Loki_proto
         self.base.get_input_stream()
     }
 
-	fn get_source_name(&self) -> String {
-		self.base.get_source_name()
-	}
+    fn get_source_name(&self) -> String {
+        self.base.get_source_name()
+    }
 
     fn get_token_factory(&self) -> &'input Self::TF {
         self.base.get_token_factory()
     }
 }
 
+lazy_static! {
+    static ref _ATN: Arc<ATN> =
+        Arc::new(ATNDeserializer::new(None).deserialize(_serializedATN.chars()));
+    static ref _decision_to_DFA: Arc<Vec<antlr_rust::RwLock<DFA>>> = {
+        let mut dfa = Vec::new();
+        let size = _ATN.decision_to_state.len();
+        for i in 0..size {
+            dfa.push(DFA::new(_ATN.clone(), _ATN.get_decision_state(i), i as isize).into())
+        }
+        Arc::new(dfa)
+    };
+}
 
-
-	lazy_static! {
-	    static ref _ATN: Arc<ATN> =
-	        Arc::new(ATNDeserializer::new(None).deserialize(_serializedATN.chars()));
-	    static ref _decision_to_DFA: Arc<Vec<antlr_rust::RwLock<DFA>>> = {
-	        let mut dfa = Vec::new();
-	        let size = _ATN.decision_to_state.len();
-	        for i in 0..size {
-	            dfa.push(DFA::new(
-	                _ATN.clone(),
-	                _ATN.get_decision_state(i),
-	                i as isize,
-	            ).into())
-	        }
-	        Arc::new(dfa)
-	    };
-	}
-
-
-
-	const _serializedATN:&'static str =
-		"\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x02\
+const _serializedATN: &'static str =
+    "\x03\u{608b}\u{a72a}\u{8133}\u{b9ed}\u{417c}\u{3be7}\u{7786}\u{5964}\x02\
 		\x3b\u{237}\x08\x01\x04\x02\x09\x02\x04\x03\x09\x03\x04\x04\x09\x04\x04\
 		\x05\x09\x05\x04\x06\x09\x06\x04\x07\x09\x07\x04\x08\x09\x08\x04\x09\x09\
 		\x09\x04\x0a\x09\x0a\x04\x0b\x09\x0b\x04\x0c\x09\x0c\x04\x0d\x09\x0d\x04\
