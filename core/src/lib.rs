@@ -47,3 +47,8 @@ pub mod state_model;
 pub mod target_strategy;
 pub mod user_interface;
 pub mod utils;
+
+#[no_mangle]
+pub extern "C" fn happy() {
+    println!("happy");
+}

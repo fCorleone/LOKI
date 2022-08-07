@@ -10,10 +10,13 @@ use crate::target_strategy::*;
 use crate::user_interface::*;
 use antlr_rust as _;
 use anyhow::{anyhow, Context, Result};
+use lazy_static::lazy_static;
 use rand::seq::SliceRandom;
 use rand::Rng;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::vec;
 use std::{thread, time};
 
@@ -24,6 +27,9 @@ use antlr_rust::tree::Visitable;
 use loki_spec::loki_spec::loki_speclexer::*;
 use loki_spec::loki_spec::loki_specparser::*;
 use loki_spec::loki_spec::spec_visitor::*;
+extern crate base64;
+extern crate libc;
+use std::ffi::{CStr, CString};
 
 /// the interval of active package sending, the unit is second
 const SENDING_INTERVAL: u64 = 5;
@@ -137,7 +143,22 @@ impl Engine {
 
         // mutate the message and return
         org_msg.mutate();
-        org_msg
+        return org_msg;
+
+        // select the sending target nodes
+        // let mut send_node_ids: Vec<String> = vec![];
+        // let mut rng = rand::thread_rng();
+        // let temp: u32 = rng.gen::<u32>();
+        // let connected_node_ids = self
+        //     .connnected_nodes
+        //     .clone()
+        //     .into_iter()
+        //     .map(|n| n.get_node_id())
+        //     .collect::<Vec<_>>();
+        // let total_nodes = connected_node_ids.len() as u32;
+        // // randomly choose one of the nodes as the target
+        // let chosen_node = temp % total_nodes;
+        // send_packets(connected_node_ids[chosen_node as usize].clone(), org_msg);
     }
 
     /// passive sending fuzz packets with initial seeds
@@ -201,75 +222,149 @@ impl Engine {
 
     /// active sending fuzz packets
     /// this need to be called in a new thread
-    pub fn active_sending(&mut self) {
+    /// this function returns a hashmap including the target node ids and the selected message's buffer
+    pub fn active_sending(&mut self) -> HashMap<String, Vec<u8>> {
+        let mut return_val = HashMap::new();
         // infinite loop, never stop unless LOKI is down
-        loop {
-            // first get the sending targets for this round
-            let mut send_node_ids: Vec<String> = vec![];
-            let mut rng = rand::thread_rng();
-            let temp: u32 = rng.gen::<u32>();
-            let connected_node_ids = self
-                .connnected_nodes
-                .clone()
-                .into_iter()
-                .map(|n| n.get_node_id())
-                .collect::<Vec<_>>();
-            let total_nodes = connected_node_ids.len() as u32;
-            // if the random number indicates that we should choose the random trarget selection strategy
-            if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 0 {
-                match random_target_nodes_strategy(connected_node_ids) {
-                    Ok(ids) => {
-                        send_node_ids = ids;
-                    }
-                    Err(_) => {
-                        panic!("Connected node is empty! Check your network settings!");
-                    }
+        // loop {
+        // first get the sending targets for this round
+        let mut send_node_ids: Vec<String> = vec![];
+        let mut rng = rand::thread_rng();
+        let temp: u32 = rng.gen::<u32>();
+        let connected_node_ids = self
+            .connnected_nodes
+            .clone()
+            .into_iter()
+            .map(|n| n.get_node_id())
+            .collect::<Vec<_>>();
+        let total_nodes = connected_node_ids.len() as u32;
+        // if no connected nodes, sleep for 5 seconds and retry
+        if total_nodes == 0 {
+            let sleep_5_secs = time::Duration::from_secs(5);
+            thread::sleep(sleep_5_secs);
+            // continue;
+            return HashMap::new();
+        }
+        // if the random number indicates that we should choose the random trarget selection strategy
+        if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 0 {
+            match random_target_nodes_strategy(connected_node_ids) {
+                Ok(ids) => {
+                    send_node_ids = ids;
+                }
+                Err(_) => {
+                    panic!("Connected node is empty! Check your network settings!");
                 }
             }
-            // if the random number indicates that we should choose the random trarget selection strategy and select 1/3 nodes
-            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 1 {
-                match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 3) {
-                    Ok(ids) => {
-                        send_node_ids = ids;
-                    }
-                    Err(_) => {
-                        panic!("Connected node is empty! Check your network settings!");
-                    }
+        }
+        // if the random number indicates that we should choose the random trarget selection strategy and select 1/3 nodes
+        else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 1 {
+            match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 3) {
+                Ok(ids) => {
+                    send_node_ids = ids;
+                }
+                Err(_) => {
+                    panic!("Connected node is empty! Check your network settings!");
                 }
             }
-            // if the random number indicates that we should choose the random trarget selection strategy and select 2/3 nodes
-            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 2 {
-                match random_target_nodes_with_num_strategy(connected_node_ids, 2 * total_nodes / 3)
-                {
-                    Ok(ids) => {
-                        send_node_ids = ids;
-                    }
-                    Err(_) => {
-                        panic!("Connected node is empty! Check your network settings!");
-                    }
+        }
+        // if the random number indicates that we should choose the random trarget selection strategy and select 2/3 nodes
+        else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 2 {
+            match random_target_nodes_with_num_strategy(connected_node_ids, 2 * total_nodes / 3) {
+                Ok(ids) => {
+                    send_node_ids = ids;
+                }
+                Err(_) => {
+                    panic!("Connected node is empty! Check your network settings!");
                 }
             }
-            // if the random number indicates that we should choose the random trarget selection strategy and select 1/2 nodes
-            else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 3 {
-                match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 2) {
-                    Ok(ids) => {
-                        send_node_ids = ids;
-                    }
-                    Err(_) => {
-                        panic!("Connected node is empty! Check your network settings!");
-                    }
+        }
+        // if the random number indicates that we should choose the random trarget selection strategy and select 1/2 nodes
+        else if temp % TARGET_SELECTION_STRATEGIES_NUMBER == 3 {
+            match random_target_nodes_with_num_strategy(connected_node_ids, total_nodes / 2) {
+                Ok(ids) => {
+                    send_node_ids = ids;
+                }
+                Err(_) => {
+                    panic!("Connected node is empty! Check your network settings!");
                 }
             }
+        }
 
-            // secondly, generate the message for each target and send the package out
-            // here we have 4 choices:
-            // 1) same messages for each target, randomly choose
-            // 2) same messages for each target, according to LOKI's state
-            // 3) various messages for each target, randomly choose
-            // 4) various messages for each target, according to the target's state
-            let temp_type: u32 = rng.gen::<u32>();
-            if temp_type % 4 == 0 {
-                // 1) randomly choose a message type
+        // secondly, generate the message for each target and send the package out
+        // here we have 4 choices:
+        // 1) same messages for each target, randomly choose
+        // 2) same messages for each target, according to LOKI's state
+        // 3) various messages for each target, randomly choose
+        // 4) various messages for each target, according to the target's state
+        let temp_type: u32 = rng.gen::<u32>();
+        if temp_type % 4 == 0 {
+            // 1) randomly choose a message type
+            let chosen_msg_type = get_message_types()
+                .choose_multiple(&mut rand::thread_rng(), 1)
+                .map(|x| x.to_string().clone())
+                .collect::<Vec<String>>()[0]
+                .clone();
+            // get a random value of such type
+            let chosen_msg = match self
+                .message_pool
+                .find_latest_message_with_type(chosen_msg_type.clone())
+            {
+                Some(msg) => msg,
+                None => {
+                    // if there is no such type msg in the pool, generate one
+                    LokiMessage::generate(chosen_msg_type.clone())
+                }
+            };
+
+            // send the message
+            for target in send_node_ids {
+                return_val.insert(target, chosen_msg.clone().encode().unwrap());
+                // send_packets(target, chosen_msg.clone());
+            }
+        } else if temp_type % 4 == 1 {
+            // 2) choose a type according to LOKI's state
+            let current_state = match self
+                .state_model
+                .find_state_with_msg_type(self.cur_state.clone())
+            {
+                Ok(state) => state,
+                Err(_) => {
+                    panic!(
+                        "cannot find the message with type: {:?}",
+                        self.cur_state.clone()
+                    );
+                }
+            };
+            let mut next_states: Vec<String> = current_state
+                .get_cur_edges()
+                .iter()
+                .map(|e| e.get_to_state())
+                .collect();
+            next_states.push(self.cur_state.clone());
+            let chosen_msg_type = next_states
+                .choose_multiple(&mut rand::thread_rng(), 1)
+                .map(|x| x.clone())
+                .collect::<Vec<String>>()[0]
+                .clone();
+            // get a random value of such type
+            let chosen_msg = match self
+                .message_pool
+                .find_latest_message_with_type(chosen_msg_type.clone())
+            {
+                Some(msg) => msg,
+                None => {
+                    // if there is no such type msg in the pool, generate one
+                    LokiMessage::generate(chosen_msg_type.clone())
+                }
+            };
+            // send the message
+            for target in send_node_ids {
+                return_val.insert(target, chosen_msg.clone().encode().unwrap());
+                // send_packets(target, chosen_msg.clone());
+            }
+        } else if temp_type % 4 == 2 {
+            // 3) various random messages for each target
+            for target in send_node_ids {
                 let chosen_msg_type = get_message_types()
                     .choose_multiple(&mut rand::thread_rng(), 1)
                     .map(|x| x.to_string().clone())
@@ -286,30 +381,36 @@ impl Engine {
                         LokiMessage::generate(chosen_msg_type.clone())
                     }
                 };
-                // send the message
-                for target in send_node_ids {
-                    send_packets(target, chosen_msg.clone());
-                }
-            } else if temp_type % 4 == 1 {
-                // 2) choose a type according to LOKI's state
-                let current_state = match self
+                return_val.insert(target, chosen_msg.clone().encode().unwrap());
+                // send_packets(target, chosen_msg.clone());
+            }
+        } else if temp_type % 4 == 3 {
+            // 4) various messages for each target according to the target's state
+            for target in send_node_ids {
+                let neighbour = match self.get_neighbour_by_id(target.clone()) {
+                    Ok(n) => n,
+                    Err(_) => {
+                        panic!("Try to send to neighbour node not connected with LOKI, the id is {:?}!",target);
+                    }
+                };
+                let neighbour_current_state = match self
                     .state_model
-                    .find_state_with_msg_type(self.cur_state.clone())
+                    .find_state_with_msg_type(neighbour.get_current_state().clone())
                 {
                     Ok(state) => state,
                     Err(_) => {
                         panic!(
                             "cannot find the message with type: {:?}",
-                            self.cur_state.clone()
+                            neighbour.get_current_state().clone()
                         );
                     }
                 };
-                let mut next_states: Vec<String> = current_state
+                let mut next_states: Vec<String> = neighbour_current_state
                     .get_cur_edges()
                     .iter()
                     .map(|e| e.get_to_state())
                     .collect();
-                next_states.push(self.cur_state.clone());
+                next_states.push(neighbour.get_current_state().clone());
                 let chosen_msg_type = next_states
                     .choose_multiple(&mut rand::thread_rng(), 1)
                     .map(|x| x.clone())
@@ -326,82 +427,15 @@ impl Engine {
                         LokiMessage::generate(chosen_msg_type.clone())
                     }
                 };
-                // send the message
-                for target in send_node_ids {
-                    send_packets(target, chosen_msg.clone());
-                }
-            } else if temp_type % 4 == 2 {
-                // 3) various random messages for each target
-                for target in send_node_ids {
-                    let chosen_msg_type = get_message_types()
-                        .choose_multiple(&mut rand::thread_rng(), 1)
-                        .map(|x| x.to_string().clone())
-                        .collect::<Vec<String>>()[0]
-                        .clone();
-                    // get a random value of such type
-                    let chosen_msg = match self
-                        .message_pool
-                        .find_latest_message_with_type(chosen_msg_type.clone())
-                    {
-                        Some(msg) => msg,
-                        None => {
-                            // if there is no such type msg in the pool, generate one
-                            LokiMessage::generate(chosen_msg_type.clone())
-                        }
-                    };
-                    send_packets(target, chosen_msg.clone());
-                }
-            } else if temp_type % 4 == 3 {
-                // 4) various messages for each target according to the target's state
-                for target in send_node_ids {
-                    let neighbour = match self.get_neighbour_by_id(target.clone()) {
-                        Ok(n) => n,
-                        Err(_) => {
-                            panic!("Try to send to neighbour node not connected with LOKI, the id is {:?}!",target);
-                        }
-                    };
-                    let neighbour_current_state = match self
-                        .state_model
-                        .find_state_with_msg_type(neighbour.get_current_state().clone())
-                    {
-                        Ok(state) => state,
-                        Err(_) => {
-                            panic!(
-                                "cannot find the message with type: {:?}",
-                                neighbour.get_current_state().clone()
-                            );
-                        }
-                    };
-                    let mut next_states: Vec<String> = neighbour_current_state
-                        .get_cur_edges()
-                        .iter()
-                        .map(|e| e.get_to_state())
-                        .collect();
-                    next_states.push(neighbour.get_current_state().clone());
-                    let chosen_msg_type = next_states
-                        .choose_multiple(&mut rand::thread_rng(), 1)
-                        .map(|x| x.clone())
-                        .collect::<Vec<String>>()[0]
-                        .clone();
-                    // get a random value of such type
-                    let chosen_msg = match self
-                        .message_pool
-                        .find_latest_message_with_type(chosen_msg_type.clone())
-                    {
-                        Some(msg) => msg,
-                        None => {
-                            // if there is no such type msg in the pool, generate one
-                            LokiMessage::generate(chosen_msg_type.clone())
-                        }
-                    };
-                    send_packets(target, chosen_msg.clone());
-                }
+                return_val.insert(target, chosen_msg.clone().encode().unwrap());
+                // send_packets(target, chosen_msg.clone());
             }
-
-            // sleep for the interval time
-            let sleep_time = time::Duration::from_secs(SENDING_INTERVAL);
-            thread::sleep(sleep_time);
         }
+        return return_val.clone();
+        // sleep for the interval time
+        // let sleep_time = time::Duration::from_secs(SENDING_INTERVAL);
+        // thread::sleep(sleep_time);
+        // }
     }
 
     /// set the addresses of each node
@@ -436,74 +470,11 @@ impl Engine {
         &mut self.cur_state
     }
 
-    /// init the fuzz engine, the main controller of the LOKI
-    /// First, the engine resisters the global variables
-    /// Then, the engine inits the DSL parser
-    /// After that, the engine constructs the state model
-    /// Then, constructs the engine and starts the fuzz
-    pub fn start_fuzz_engine() -> Self {
-        // set the global variables
-        // === HERE TO MODIFY ===
-        crate::loki_type::set_timestamp_length(16);
-        crate::loki_type::set_current_language("Cpp".to_string());
-        crate::loki_type::set_current_private_key("private.key".to_string());
-        // === === === === == ===
-        println!(
-            "LOKI has startted!!! Current blockchain's language is {:?}.",
-            crate::loki_type::get_current_language()
-        );
-        // get the spec file location
-        let mut config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        // === HERE TO MODIFY ===
-        config_path.push("testcase");
-        config_path.push("simple.spec");
-        // === === === === == ===
-        println!(
-            "Loading the spec file, its location is {:?}...",
-            config_path
-        );
-        let input_str: String = fs::read_to_string(config_path).unwrap();
-        let input = InputStream::new(&*input_str);
-        let tf = CommonTokenFactory::default();
-        let lexer = Loki_specLexer::new_with_token_factory(input, &tf);
-        let token_source = CommonTokenStream::new(lexer);
-        let mut parser = Loki_specParser::new(token_source);
-        let result = parser.document();
-        // Check whether the loading is successful
-        let result_ctx = result.expect("Error: load spec file unsuccessfully!!!!");
-        println!("Load successfully! Now set the message list!!!");
-        let mut visitor = Specvisitor::default();
-        result_ctx.accept(&mut visitor);
-        let msgs_list = visitor.get_spec_messages().clone();
-        set_message_list(msgs_list);
-        // Then LOKI sets the initial state model
-        let state_model = StateModel::initialize_the_state_model();
-        println!("LOKI has set up the initial state model!!!");
-        // Then LOKI initializes the neighbour nodes info
-        println!("Loading the neighbour nodes!!!");
-        let cur_state = state_model.clone().get_states()[0].get_msg_type();
-        // // === HERE TO MODIFY ===
-        // const NEIGHBOUR_NUM:u32 = 3;
-        // let mut neighbours = Vec::<Neighbour>::new();
-        // for i in (0..NEIGHBOUR_NUM){
-        //     let nei = Neighbour::new(String::from(i),cur_state.cloen())
-        // }
-        //  // === === === === == ===
-
-        // Then LOKI constructs the engine, the message pool is empty and the neighbour nodes are empty too
-        let loki_engine = Engine::new(MessagePool::new(vec![]), vec![], state_model, cur_state);
-        println!("LOKI engined constructed!!!");
-        // println!("LOKI engined constructed!!! Now we start the active fuzzing thread!!!");
-        // thread::spawn(|| {
-        //     loki_engine.active_sending();
-        // });
-        // println!("OK the active fuzzing thread has started!!! All is well!!! Enjoy LOKI's tricks!!!");
-        loki_engine
-    }
-
     /// start the active fuzzing in a new thread
     pub fn start_active_fuzzing(&'static mut self) {
         thread::spawn(|| {
+            let sleep_30_secs = time::Duration::from_secs(30);
+            thread::sleep(sleep_30_secs);
             self.active_sending();
         });
     }
@@ -618,7 +589,11 @@ impl Engine {
     /// check whether we should add new edges to the state model when received some msgs
     pub fn check_and_update_new_edges(&mut self, rec_message: &LokiMessage) -> Result<bool> {
         let new_type = rec_message.get_structure().get_name();
-        let cur_type = self.get_cur_state();
+        if self.get_cur_state().is_empty() {
+            self.set_cur_state(new_type.clone());
+        }
+        let mut cur_type = self.get_cur_state();
+
         // update the edges if there is no edge before, the initial weight is 1.0
         let cur_state = match self
             .get_mut_state_model()
@@ -679,4 +654,287 @@ impl Engine {
         // get the type of next message
         Ok(self.get_cur_state())
     }
+}
+
+lazy_static! {
+    pub static ref LOKI_ENGINE: Mutex<Engine> = Mutex::new(Engine::new_with_empty_fields());
+}
+
+/// init the fuzz engine, the main controller of the LOKI
+/// First, the engine resisters the global variables
+/// Then, the engine inits the DSL parser
+/// After that, the engine constructs the state model
+/// Then, constructs the engine and starts the fuzz
+
+#[no_mangle]
+pub extern "C" fn start_fuzz_engine(name: *const libc::c_char) {
+    // set the global variables
+    // === HERE TO MODIFY ===
+    crate::loki_type::set_timestamp_length(16);
+    crate::loki_type::set_current_language("Cpp".to_string());
+    crate::loki_type::set_current_private_key("private.key".to_string());
+    // === === === === == ===
+    println!(
+        "LOKI has startted!!! Current blockchain's language is {:?}.",
+        crate::loki_type::get_current_language()
+    );
+    // get the spec file location
+    let mut config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // === HERE TO MODIFY ===
+    config_path.push("testcase");
+    config_path.push("simple.spec");
+    // === === === === == ===
+    println!(
+        "Loading the spec file, its location is {:?}...",
+        config_path
+    );
+    let input_str: String = fs::read_to_string(config_path).unwrap();
+    let input = InputStream::new(&*input_str);
+    let tf = CommonTokenFactory::default();
+    let lexer = Loki_specLexer::new_with_token_factory(input, &tf);
+    let token_source = CommonTokenStream::new(lexer);
+    let mut parser = Loki_specParser::new(token_source);
+    let result = parser.document();
+    // Check whether the loading is successful
+    let result_ctx = result.expect("Error: load spec file unsuccessfully!!!!");
+    let cstr_name = unsafe { CStr::from_ptr(name) };
+    let mut str_name = cstr_name.to_str().unwrap().to_string();
+    println!("Rust get the input test: \"{}\"", str_name);
+
+    println!("Load successfully! Now set the message list!!!");
+    let mut visitor = Specvisitor::default();
+    result_ctx.accept(&mut visitor);
+    let msgs_list = visitor.get_spec_messages().clone();
+    set_message_list(msgs_list);
+    // Then LOKI sets the initial state model
+    let state_model = StateModel::initialize_the_state_model();
+    println!("LOKI has set up the initial state model!!!");
+    // Then LOKI initializes the neighbour nodes info
+    // println!("Loading the neighbour nodes!!!");
+    // let cur_state = state_model.clone().get_states()[0].get_msg_type();
+    // // === HERE TO MODIFY ===
+    // const NEIGHBOUR_NUM:u32 = 3;
+    // let mut neighbours = Vec::<Neighbour>::new();
+    // for i in (0..NEIGHBOUR_NUM){
+    //     let nei = Neighbour::new(String::from(i),cur_state.cloen())
+    // }
+    //  // === === === === == ===
+
+    // Then LOKI constructs the engine, the message pool is empty and the neighbour nodes are empty too
+    let loki_engine = Engine::new(
+        MessagePool::new(vec![]),
+        vec![],
+        state_model,
+        String::from(""),
+    );
+    println!("LOKI engined constructed!!!");
+    *LOKI_ENGINE.lock().unwrap() = loki_engine;
+}
+
+// for now, we only send one packet to one target for one time
+#[no_mangle]
+pub extern "C" fn get_active_sending_targets() -> Vec<u8> {
+    let hash_map_target_messages = LOKI_ENGINE.lock().unwrap().active_sending();
+    if hash_map_target_messages.is_empty() {
+        return vec![];
+    }
+    return hash_map_target_messages
+        .keys()
+        .clone()
+        .next()
+        .unwrap()
+        .to_string()
+        .into_bytes();
+}
+
+#[no_mangle]
+pub extern "C" fn get_active_sending_packets() -> Vec<u8> {
+    let hash_map_target_messages = LOKI_ENGINE.lock().unwrap().active_sending();
+    if hash_map_target_messages.is_empty() {
+        return vec![];
+    }
+    return hash_map_target_messages
+        .values()
+        .clone()
+        .next()
+        .unwrap()
+        .to_vec();
+}
+
+// #[no_mangle]
+// pub extern "C" fn recv_packets_int(msg_type: std::os::raw::c_int) -> i32 {
+//     println!("The msg_type is {}", msg_type);
+//     return 0;
+// }
+
+#[no_mangle]
+pub extern "C" fn recv_packets(
+    msg_type: std::os::raw::c_int,
+    from_id_c: *const libc::c_char,
+    payload_c: *const libc::c_uchar,
+    payload_size: std::os::raw::c_int,
+) -> *const libc::c_char {
+    let from_id_name = unsafe { std::ffi::CStr::from_ptr(from_id_c) };
+    let from_id = std::str::from_utf8(from_id_name.to_bytes())
+        .unwrap()
+        .to_string();
+    let payload = unsafe { std::slice::from_raw_parts(payload_c, payload_size as usize) };
+    // todo: convert the from id into a string
+    // println!("The msg_type is {}", msg_type);
+    // println!("The msg's from is {:?}", from_id);
+    // println!("The msg's paylaod is {:?}", payload);
+    let msg_type_string = get_fisco_bcos_msg_type(msg_type.try_into().unwrap());
+    let msg_structure =
+        crate::loki_message::get_structure_from_msg_type(msg_type_string.clone()).unwrap();
+    let raw_message_content = decode("RawMessage".to_string(), payload);
+    // println!("The content is {:?}", raw_message_content);
+    // println!(
+    //     "The payload in the content is {:?}",
+    //     base64::decode(
+    //         raw_message_content["payLoad"]
+    //             .as_str()
+    //             .expect("Error in as_str()")
+    //     )
+    // );
+    // println!(
+    //     "The content's version is {:?}",
+    //     raw_message_content["version"]
+    // );
+
+    let mut content = match &msg_type_string[..] {
+        "PrePreparePacket"
+        | "PreparePacket"
+        | "CommitPacket"
+        | "CommittedProposalResponse"
+        | "CheckPoint"
+        | "RecoverRequest"
+        | "RecoverResponse" => decode(
+            "PBFTRawMessage".to_string(),
+            &base64::decode(
+                raw_message_content["payLoad"]
+                    .as_str()
+                    .expect("Error in as_str()"),
+            )
+            .unwrap()[..],
+        ),
+        "PreparedProposalResponse" | "ViewChangePacket" => decode(
+            "RawViewChangeMessage".to_string(),
+            &base64::decode(
+                raw_message_content["payLoad"]
+                    .as_str()
+                    .expect("Error in as_str()"),
+            )
+            .unwrap()[..],
+        ),
+        "NewViewPacket" => decode(
+            "RawNewViewMessage".to_string(),
+            &base64::decode(
+                raw_message_content["payLoad"]
+                    .as_str()
+                    .expect("Error in as_str()"),
+            )
+            .unwrap()[..],
+        ),
+        "CommittedProposalRequest" | "PreparedProposalRequest" => decode(
+            "ProposalRequest".to_string(),
+            &base64::decode(
+                raw_message_content["payLoad"]
+                    .as_str()
+                    .expect("Error in as_str()"),
+            )
+            .unwrap()[..],
+        ),
+        _ => {
+            panic!("received type is non of the pbft messages");
+        }
+    };
+    let mut new_content = serde_json::Map::new();
+    new_content.insert("message".to_string(), serde_json::Value::from(content));
+    let mut recv_msg = LokiMessage::new(from_id, msg_structure, new_content);
+    // println!("The recv_msg is {:?}", recv_msg);
+    let sent_packet = crate::engine::LOKI_ENGINE
+        .lock()
+        .unwrap()
+        .passive_sending(recv_msg);
+    // println!("The sent packet is {:?}",sent_packet);
+    let encoded_payload = match &sent_packet.get_structure().get_name()[..] {
+        "PrePreparePacket"
+        | "PreparePacket"
+        | "CommitPacket"
+        | "CommittedProposalResponse"
+        | "CheckPoint"
+        | "RecoverRequest"
+        | "RecoverResponse" => encode(
+            "PBFTRawMessage".to_string(),
+            sent_packet
+                .get_content()
+                .get("message")
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        "PreparedProposalResponse" | "ViewChangePacket" => encode(
+            "RawViewChangeMessage".to_string(),
+            sent_packet
+                .get_content()
+                .get("message")
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        "NewViewPacket" => encode(
+            "RawNewViewMessage".to_string(),
+            sent_packet
+                .get_content()
+                .get("message")
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        "CommittedProposalRequest" | "PreparedProposalRequest" => encode(
+            "ProposalRequest".to_string(),
+            sent_packet
+                .get_content()
+                .get("message")
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        _ => {
+            panic!("passive sending generate a type that cannot be recognized by FISCO-BCOS");
+        }
+    };
+    // let encoded_payload = std::str::from_utf8(&encoded_payload_vec[..]).unwrap().to_string();
+    let mut content_send_raw_packet = serde_json::Map::new();
+    content_send_raw_packet.insert("version".to_string(), serde_json::Value::from(0_i32));
+    content_send_raw_packet.insert(
+        "type".to_string(),
+        serde_json::Value::from(get_fisco_bcos_type_int(
+            sent_packet.get_structure().get_name(),
+        )),
+    );
+    // here the signature Data need to be calculated
+    if sent_packet.get_structure().get_name() == "ViewChangePacket"
+        || sent_packet.get_structure().get_name() == "NewViewPacket"
+    {
+        // if the type is viewchange or a newview, need to handle the signature
+        content_send_raw_packet.insert("signatureData".to_string(), serde_json::Value::from(String::new()));
+    } else {
+        content_send_raw_packet.insert("signatureData".to_string(), serde_json::Value::from(String::new()));
+    }
+    content_send_raw_packet.insert(
+        "payLoad".to_string(),
+        
+        serde_json::Value::from(base64::encode(&encoded_payload[..])),
+        //   std::str::from_utf8(&encoded_payload[..]).unwrap()),
+        // serde_json::Value::from(String::from("hhh"))
+    );
+    let encoded_data = encode("RawMessage".to_string(), content_send_raw_packet);
+    let encoded_data_str = base64::encode(&encoded_data[..]);
+    let encoded_data_c = CString::new(encoded_data_str).unwrap();
+    return encoded_data_c.as_ptr();
 }

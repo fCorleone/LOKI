@@ -130,6 +130,11 @@ impl LokiMessage {
             // }
             match &attr_type[..] {
                 "Number" => {
+                    // println!(
+                    //     "The attr_name is {:?}",
+                    //     &structure_attr.get_attr_name().clone()
+                    // );
+                    // println!("The content is {:?}", self.get_mut_content());
                     let cur_val = self
                         .get_mut_content()
                         .get(&structure_attr.get_attr_name())
@@ -164,7 +169,7 @@ impl LokiMessage {
                         let cur_i64_val = cur_val.as_i64().unwrap();
                         let mut mutated_val: i128 = 0;
                         match &attr_mutation[..] {
-                            "random_Number" | "edge_value" => {
+                            "random_Number" | "edge_value" | _ => {
                                 mutated_val =
                                     generate_random_signed_number(64, get_current_language());
                             }
@@ -182,7 +187,6 @@ impl LokiMessage {
                                     get_current_language(),
                                 );
                             }
-                            _ => {}
                         }
                         self.get_mut_content()[&structure_attr.get_attr_name()] =
                             Value::Number(Number::from(mutated_val as i64));
@@ -208,17 +212,17 @@ impl LokiMessage {
                         .get_mut_content()
                         .get(&structure_attr.get_attr_name())
                         .unwrap();
-                    let cur_bytes_val = cur_val.as_array().unwrap().clone();
-                    let cur_vecu8_val: Vec<u8> = cur_bytes_val
-                        .iter()
-                        .map(|v| (v.as_u64().unwrap() as u8))
-                        .collect();
+                    println!("The original val is {:?}",cur_val);
+                    let cur_bytes_val = cur_val.as_str().unwrap().as_bytes();
+                    let cur_vecu8_val: Vec<u8> = cur_bytes_val.to_vec();
+                    println!("The original byte is {:?}",cur_vecu8_val);
                     let mutated_val = random_mutate_byte(cur_vecu8_val);
-                    self.get_mut_content()[&structure_attr.get_attr_name()] = Value::Array(
-                        mutated_val
-                            .iter()
-                            .map(|v| Value::Number(Number::from(*v as u64)))
-                            .collect::<Vec<_>>(),
+                    self.get_mut_content()[&structure_attr.get_attr_name()] = Value::String(
+                        std::str::from_utf8(&mutated_val[..]).unwrap().to_string()
+                        // mutated_val
+                        //     .iter()
+                        //     .map(|v| Value::Number(Number::from(*v as u64)))
+                        //     .collect::<Vec<_>>(),
                     );
                 }
                 "Timestamp" => {
@@ -229,7 +233,7 @@ impl LokiMessage {
                     let cur_timestamp_val = cur_val.as_str().unwrap();
                     let mut mutated_val: String = cur_timestamp_val.to_string();
                     match &attr_mutation[..] {
-                        "random_Timestamp" => {
+                        "random_Timestamp" | _ => {
                             mutated_val = random_mutate_long_number(cur_timestamp_val.to_string());
                         }
                         "Decreasing" => {
@@ -246,7 +250,7 @@ impl LokiMessage {
                                 '+'.to_string(),
                             );
                         }
-                        _ => {}
+                        // _ => {}
                     };
                     self.get_mut_content()[&structure_attr.get_attr_name()] =
                         Value::String(String::from(mutated_val));
@@ -287,7 +291,7 @@ impl LokiMessage {
                     let cur_bignumber_val = cur_val.as_str().unwrap();
                     let mut mutated_val: String = cur_bignumber_val.to_string();
                     match &attr_mutation[..] {
-                        "random_Timestamp" => {
+                        "random_Timestamp" | _ => {
                             mutated_val = random_mutate_long_number(cur_bignumber_val.to_string());
                         }
                         "Decreasing" => {
@@ -304,7 +308,7 @@ impl LokiMessage {
                                 '+'.to_string(),
                             );
                         }
-                        _ => {}
+                        // _ => {}
                     };
                     self.get_mut_content()[&structure_attr.get_attr_name()] =
                         Value::String(String::from(mutated_val));
@@ -396,9 +400,7 @@ impl LokiMessage {
                             current_array
                                 .get_content()
                                 .iter()
-                                .map(|v| {
-                                    Value::Number(Number::from(v.parse::<u8>().unwrap() as u64))
-                                })
+                                .map(|v| Value::String(v.to_string()))
                                 .collect(),
                         ),
                         "timestamp" | "bignumber" => Value::Array(
@@ -500,11 +502,13 @@ impl LokiMessage {
                         let generated_val = generate_random_byte_with_length(ele_len as usize);
                         new_content.insert(
                             structure_attr.get_attr_name(),
-                            Value::Array(
-                                generated_val
-                                    .iter()
-                                    .map(|v| Value::Number(Number::from(*v as u64)))
-                                    .collect::<Vec<_>>(),
+                            Value::String(
+                                std::str::from_utf8(&generated_val[..]).unwrap().to_string()
+                                // generated_val
+                                //     .iter()
+                                //     // .map(|v| Value::String(v.to_string()))
+                                //     .map(|v| Value::Number(Number::from(*v as u64)))
+                                //     .collect::<Vec<_>>(),
                             ),
                         );
                     }
@@ -593,7 +597,8 @@ impl LokiMessage {
                                     .get_content()
                                     .iter()
                                     .map(|v| {
-                                        Value::Number(Number::from(v.parse::<u8>().unwrap() as u64))
+                                        Value::String(v.to_string())
+                                        // Value::Number(Number::from(v.parse::<u8>().unwrap() as u64))
                                     })
                                     .collect(),
                             ),

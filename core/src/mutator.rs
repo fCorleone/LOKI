@@ -181,13 +181,17 @@ pub const MAX_MUTATE_ITER: u8 = 100;
 pub fn random_mutate_byte(byte: Vec<u8>) -> Vec<u8> {
     let mut rng = rand::thread_rng();
     let mutate_times: u8 = rng.gen_range(1..MAX_MUTATE_ITER + 1);
-    let len = byte.len();
-    let mut res = byte;
-    for _i in 0..mutate_times {
-        let pos = rng.gen_range(0..len);
-        // randomly pick a u8 number
-        res[pos] = generate_random_number_with_range(u8::MIN, u8::MAX);
+    let mut len = byte.len();
+    if len == 0{
+        return generate_random_byte_with_length(32);
     }
+    // let mut res = byte;
+    let res = generate_random_byte_with_length(len);
+    // for _i in 0..mutate_times {
+    //     let pos = rng.gen_range(0..len);
+    //     // randomly pick a u8 number
+    //     res[pos] = generate_random_number_with_range(u8::MIN, u8::MAX);
+    // }
     res
 }
 
@@ -196,6 +200,9 @@ pub fn random_mutate_string(string: String) -> String {
     let mut rng = rand::thread_rng();
     let mutate_times: u8 = rng.gen_range(1..MAX_MUTATE_ITER + 1);
     let len = string.len();
+    if len == 0{
+        return generate_random_string_with_length(16);
+    }
     let mut res = string;
     for _i in 0..mutate_times {
         let pos = rng.gen_range(0..len);
@@ -219,6 +226,9 @@ pub fn random_mutate_long_number(long_number: String) -> String {
     let len = long_number.len();
     let mut res = long_number;
     const CHARSET: &[u8] = b"0123456789";
+    if len == 0{
+        return generate_random_long_number_with_length(16);
+    }
     for _i in 0..mutate_times {
         let pos = rng.gen_range(0..len);
         // randomly pick a number
@@ -324,10 +334,10 @@ pub fn random_mutate_array(original_arr: &mut Array) {
             "Current new_array is {:?} and new length is {:?}",
             new_array, new_len
         );
-        if remove_len > 0 {
-            // bug here in this function
-            new_array.drain((new_len as usize)..);
-        }
+        // if remove_len > 0 {
+        //     // bug here in this function
+        //     new_array.drain((new_len as usize)..);
+        // }
         // debug!("Current new_array after draining is {:?}", new_array);
         original_arr.set_content(new_array);
     } else {

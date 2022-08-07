@@ -140,3 +140,8 @@ In addition, delete the following code at line 223 in the function 'run'
 ```
 
 Then You can use the protobuf automatical generator. First move all your proto files into `core/src/protos`, then just run `cargo build` and the `build.rs` will generate two files `decode_map_to_buffer.rs` and `encode_map_to_buffer.rs` for you! Enjoy!!
+
+LOKI has to use rust version 1.60.0 nightly, `rustup toolchain install nightly-2022-01-20`, and then `rustup default nightly-2022-01-20-x86_64-unknown-linux-gnu`
+
+
+LOKI does not support the array of a struct
